@@ -6,3 +6,32 @@ export interface SignupInterviewerDTO {
     technicalSkills?: string[];
     resume?: string;
 }
+
+export interface InterviewerProfileDTO{
+    user:{
+        id: string;
+        name: string;
+        email: string;
+        isVerified: boolean;
+        isApproved: boolean;
+        totalSessions: number;
+    }
+    profile: {
+        profilePic?: string;
+        jobTitle?: string;
+        yearsOfExperience?: number;
+        professionalBio?: string;
+        technicalSkills: string[];
+        resume?: string;
+    };
+}
+
+export interface UpdateInterviewerProfileDTO{
+    name?: string;
+    profilePic?: string;
+    jobTitle?: string;
+    yearsOfExperience?: number;
+    professionalBio?: string;
+    technicalSkills?: string[];
+    resume?: string;
+}
