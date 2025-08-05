@@ -9,4 +9,6 @@ export enum ErrorCode{
     INVALID_CREDENTIALS = "INVALID_CREDENTIALS",
     FORBIDDEN= "Insufficient permissions",
     INTERNAL_ERROR= "Internal server error",
+    NOT_FOUND = "NOT_FOUND",
+    BAD_REQUEST = "BAD_REQUEST",
 }

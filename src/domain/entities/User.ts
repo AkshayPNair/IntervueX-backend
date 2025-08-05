@@ -14,6 +14,9 @@ export class User {
         public hasSubmittedVerification:boolean=false,
         public isRejected:boolean=false,
         public rejectedReason?:string,
+        public profilePicture?: string,
+        public resume?: string,
+        public skills: string[] = [],
         public createdAt?:Date,
         public updatedAt?:Date
     ) { }
@@ -33,6 +36,9 @@ export interface UserDatabaseResult {
     hasSubmittedVerification?:boolean;
     isRejected?:boolean,
     rejectedReason?:string,
+    profilePicture?: string;
+    resume?: string;
+    skills?: string[];
     _id?: string;
     id?: string;
     createdAt?:Date;

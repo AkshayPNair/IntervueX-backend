@@ -14,6 +14,9 @@ export interface IUserDocument extends Document {
   hasSubmittedVerification:boolean;
   isRejected:boolean;
   rejectedReason?:string;
+  profilePicture?: string;
+  resume?: string;
+  skills: string[];
 }
 
 const userSchema = new Schema<IUserDocument>(
@@ -30,7 +33,10 @@ const userSchema = new Schema<IUserDocument>(
     totalSessions: { type: Number, default: 0 },
     hasSubmittedVerification:{type:Boolean,default:false},
     isRejected:{type:Boolean,default:false},
-    rejectedReason:{type:String,default:null}
+    rejectedReason:{type:String,default:null},
+    profilePicture: { type: String, default: null },
+    resume: { type: String, default: null },
+    skills: { type: [String], default: [] }
   },
   { timestamps: true }
 );
