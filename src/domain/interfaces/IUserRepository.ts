@@ -1,5 +1,20 @@
 import {User} from "../entities/User";
 
+export interface UserWithInterviewerProfile {
+    _id: string;
+    name: string;
+    email: string;
+    profilePicture?: string;
+    skills?: string[];
+    interviewerProfile?: {
+        profilePic?: string;
+        jobTitle?: string;
+        yearsOfExperience?: number;
+        professionalBio?: string;
+        technicalSkills?: string[];
+    };
+}
+
 export interface IUserRepository{
     createUser(user:User):Promise<User>;
     findUserByEmail(email:string):Promise<User|null>;
@@ -14,4 +29,7 @@ export interface IUserRepository{
     findUserById(userId: string): Promise<User|null>;
     findPendingInterviewers(): Promise<User[]>;
     updateUser(userId: string, update: Partial<User>): Promise<void>;
+    updateUserProfile(userId:string,profileData:{name?:string; profilePicture?:string; resume?:string; skills?:string[]}):Promise<User|null>;
+    findApprovedInterviewersWithProfiles():Promise<UserWithInterviewerProfile[]>;
+    findApprovedInterviewerById(interviewerId: string): Promise<UserWithInterviewerProfile | null>;
 }

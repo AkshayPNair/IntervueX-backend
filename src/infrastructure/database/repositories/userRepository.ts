@@ -1,8 +1,9 @@
 import { IUserDocument, UserModel } from '../models/UserModel';
 import { User, UserDatabaseResult } from '../../../domain/entities/User';
 import { toUserPersistence, toUserDomain } from '../../../application/mappers/userMapper';
-import { IUserRepository } from '../../../domain/interfaces/IUserRepository';
+import { IUserRepository ,UserWithInterviewerProfile} from '../../../domain/interfaces/IUserRepository';
 import { BaseRepository } from './baseRepository';
+import { Types } from "mongoose";
 
 export class UserRepository extends BaseRepository<IUserDocument> implements IUserRepository {
   constructor() {
@@ -83,6 +84,99 @@ export class UserRepository extends BaseRepository<IUserDocument> implements IUs
     await this.model.updateOne({ _id: userId }, { $set: update });
   }
 
+  async updateUserProfile(userId: string, profileData: { name?: string; profilePicture?: string; resume?: string; skills?: string[]; }): Promise<User | null> {
+    const result=await this.model.findByIdAndUpdate(
+      userId,
+      {$set:profileData},
+      {new:true}
+    )
+    return result?toUserDomain(result):null
+  }
+
+  async findApprovedInterviewersWithProfiles(): Promise<UserWithInterviewerProfile[]> {
+    const results = await this.model.aggregate([
+      {
+        $match: {
+          role: "interviewer",
+          isVerified: true,
+          isApproved: true,
+          isBlocked: false
+        }
+      },
+      {
+        $lookup: {
+          from: "interviewers",
+          localField: "_id",
+          foreignField: "userId",
+          as: "interviewerProfile"
+        }
+      },
+      {
+        $unwind: {
+          path: "$interviewerProfile",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          email: 1,
+          profilePicture: 1,
+          skills: 1,
+          "interviewerProfile.profilePic": 1,
+          "interviewerProfile.jobTitle": 1,
+          "interviewerProfile.yearsOfExperience": 1,
+          "interviewerProfile.professionalBio": 1,
+          "interviewerProfile.technicalSkills": 1,
+        }
+      }
+    ]);
+    return results;
+  }
+
+  async findApprovedInterviewerById(interviewerId: string): Promise<UserWithInterviewerProfile | null> {
+    const results = await this.model.aggregate([
+      {
+        $match: {
+          _id:  new Types.ObjectId(interviewerId),
+          role: "interviewer",
+          isVerified: true,
+          isApproved: true,
+          isBlocked: false
+        }
+      },
+      {
+        $lookup: {
+          from: "interviewers",
+          localField: "_id",
+          foreignField: "userId",
+          as: "interviewerProfile"
+        }
+      },
+      {
+        $unwind: {
+          path: "$interviewerProfile",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          email: 1,
+          profilePicture: 1,
+          skills: 1,
+          "interviewerProfile.profilePic": 1,
+          "interviewerProfile.jobTitle": 1,
+          "interviewerProfile.yearsOfExperience": 1,
+          "interviewerProfile.professionalBio": 1,
+          "interviewerProfile.technicalSkills": 1,
+        }
+      }
+    ]);
+    return results.length > 0 ? results[0] : null;
+  }
  
 }
 
