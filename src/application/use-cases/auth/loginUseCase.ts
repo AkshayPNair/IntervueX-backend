@@ -33,6 +33,7 @@ export class LoginUseCase implements ILoginService{
             email: user.email,
             role: user.role,
             isApproved: user.isApproved,
+            isBlocked:user.isBlocked,
           },
           token
         };
