@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IUserDocument extends Document {
   name: string;
   email: string;
-  password: string;
+  password?: string;
   otp?: string;
   otpExpiry?: Date;
   isVerified: boolean;
@@ -17,13 +17,20 @@ export interface IUserDocument extends Document {
   profilePicture?: string;
   resume?: string;
   skills: string[];
+  isGoogleUser:boolean;
+  googleId?:string;
 }
 
 const userSchema = new Schema<IUserDocument>(
   {
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { 
+      type: String, 
+      required: function(this:IUserDocument){
+        return !this.isGoogleUser
+      }
+    },
     otp: { type: String , default:null },
     otpExpiry: { type: Date , default:null },
     isVerified: { type: Boolean, default: false },
@@ -36,7 +43,9 @@ const userSchema = new Schema<IUserDocument>(
     rejectedReason:{type:String,default:null},
     profilePicture: { type: String, default: null },
     resume: { type: String, default: null },
-    skills: { type: [String], default: [] }
+    skills: { type: [String], default: [] },
+    isGoogleUser:{type:Boolean,default:false},
+    googleId:{type:String,default:null}
   },
   { timestamps: true }
 );

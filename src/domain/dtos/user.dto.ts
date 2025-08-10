@@ -14,7 +14,9 @@ export interface SignupUserDTO {
     rejectedReason?: string,
     profilePicture?: string,
     resume?: string,
-    skills?: string[]
+    skills?: string[],
+    isGoogleUser?:boolean,
+    googleId?:string
 }
 export interface LoginDTO {
     email: string;
@@ -52,7 +54,7 @@ export interface AdminUserListDTO {
     isBlocked: boolean;
     totalSessions?: number;
     createdAt?: Date;
-    updatedAt?: Date;
+    updatedAt?: Date;   
 }
 
 export interface UserProfileDTO {

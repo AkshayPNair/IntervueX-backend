@@ -5,24 +5,38 @@ import { IUserRepository ,UserWithInterviewerProfile} from '../../../domain/inte
 import { BaseRepository } from './baseRepository';
 import { Types } from "mongoose";
 
+function toUserDatabaseResult(doc:IUserDocument):UserDatabaseResult{
+    return{
+        ...doc.toObject(),
+        _id: doc._id?.toString(),
+    }
+}
+
 export class UserRepository extends BaseRepository<IUserDocument> implements IUserRepository {
   constructor() {
     super(UserModel);
   }
+  
   async createUser(user: User): Promise<User> {
     const created = await UserModel.create(toUserPersistence(user));
-    return toUserDomain(created);
+    return toUserDomain(toUserDatabaseResult(created));
   }
 
   async findUserByEmail(email: string): Promise<User | null> {
     const result = await this.model.findOne({ email });
-    return result ? toUserDomain(result) : null;
+    return result ? toUserDomain(toUserDatabaseResult(result)) : null;
   }
 
   async findUserById(userId: string): Promise<User | null> {
     const result = await this.findById(userId);
-    return result ? toUserDomain(result) : null;
+    return result ? toUserDomain(toUserDatabaseResult(result)) : null;
   }
+
+  async findUserByGoogleId(googleId: string): Promise<User | null> {
+    const result = await this.model.findOne({ googleId });
+    return result ? toUserDomain(toUserDatabaseResult(result)) : null;
+  }
+  
 
   async deleteUserByEmail(email: string): Promise<void> {
     await this.model.deleteOne({ email, isVerified: false });
@@ -36,7 +50,7 @@ export class UserRepository extends BaseRepository<IUserDocument> implements IUs
     console.log("OTP for verification:", otp);
     console.log("Current Time:", new Date());
 
-    return toUserDomain(result);
+    return toUserDomain(toUserDatabaseResult(result));
   }
 
   async updateOtp(email: string, otp: string | null, otpExpiry: Date | null): Promise<void> {
@@ -55,7 +69,7 @@ export class UserRepository extends BaseRepository<IUserDocument> implements IUs
 
   async getAllUsers(): Promise<User[]> {
     const results = await this.model.find({ role: { $in: ['user', 'interviewer'] } })
-    return results.map(toUserDomain)
+    return results.map(toUserDatabaseResult).map(toUserDomain)
   }
 
   async blockUserById(userId: string): Promise<void> {
@@ -77,7 +91,7 @@ export class UserRepository extends BaseRepository<IUserDocument> implements IUs
       isApproved: false,
       isRejected:{$ne:true}
     });
-    return results.map(toUserDomain);
+    return results.map(toUserDatabaseResult).map(toUserDomain);
   }
 
   async updateUser(userId: string, update: Partial<User>): Promise<void> {
@@ -90,7 +104,7 @@ export class UserRepository extends BaseRepository<IUserDocument> implements IUs
       {$set:profileData},
       {new:true}
     )
-    return result?toUserDomain(result):null
+    return result?toUserDomain(toUserDatabaseResult(result)):null
   }
 
   async findApprovedInterviewersWithProfiles(): Promise<UserWithInterviewerProfile[]> {
