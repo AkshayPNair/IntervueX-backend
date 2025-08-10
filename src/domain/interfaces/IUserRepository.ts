@@ -18,6 +18,7 @@ export interface UserWithInterviewerProfile {
 export interface IUserRepository{
     createUser(user:User):Promise<User>;
     findUserByEmail(email:string):Promise<User|null>;
+    findUserByGoogleId(googleId:string):Promise<User|null>;
     deleteUserByEmail(email:string):Promise<void>;
     verifyOtp(email:string,otp:string):Promise<User|null>;
     updateUserVerification(email:string):Promise<void>;

@@ -8,7 +8,10 @@ import { toLoginUserDTO } from '../../../application/mappers/userMapper';
 import {IResendOtpService} from '../../../domain/interfaces/IResendOtpService';
 import { IForgetPasswordService } from '../../../domain/interfaces/IForgetPasswordService';
 import { IResetPasswordService } from '../../../domain/interfaces/IResetPasswordService';
+import { IGoogleAuthService } from '../../../domain/interfaces/IGoogleAuthService';
 import { HttpStatusCode } from '../../../utils/HttpStatusCode';
+import { GoogleLoginDTO,RoleSelectionDTO } from '../../../domain/dtos/googleAuth.dto';
+import { error } from 'console';
 
 export class AuthController{
   constructor (
@@ -17,7 +20,8 @@ export class AuthController{
     private _loginService: ILoginService,
     private _resendOtpService:IResendOtpService,
     private _forgetPasswordService:IForgetPasswordService,
-    private _resetPasswordService:IResetPasswordService
+    private _resetPasswordService:IResetPasswordService,
+    private _googleAuthService:IGoogleAuthService
   ){}
 
   async signupUser(req:Request, res: Response){
@@ -136,9 +140,26 @@ export class AuthController{
       const loginDto=toLoginUserDTO(req.body);
       const result=await this._loginService.execute(loginDto);
 
-      // Set secure cookie based on role
-      const cookieName = `auth_${result.user.role}`;
-      res.cookie(cookieName, result.token, {
+      const jwt=require('jsonwebtoken')
+      const payload={
+        id:result.user.id,
+        email:result.user.email,
+        role:result.user.role,
+        isBlocked:result.user.isBlocked || false
+      }
+
+      const accessToken=jwt.sign(payload,process.env.JWT_ACCESS_SECRET,{expiresIn:'15m'})
+      const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+
+      res.cookie('access_token', accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 15 * 60 * 1000, // 15 minutes
+        path: '/'
+      });
+
+      res.cookie('refresh_token', refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
@@ -167,39 +188,75 @@ export class AuthController{
     }
   }
 
-  async me(req:any, res:Response){
-    if(!req.user){
-      return res.status(HttpStatusCode.UNAUTHORIZED).json({ error: 'Not authenticated' });
+  async refreshToken(req:Request,res:Response){
+    try {
+      const refreshToken=req.cookies.refresh_token
+
+      if(!refreshToken){
+        return res.status(HttpStatusCode.UNAUTHORIZED).json({
+          error:"Refresh token not found"
+        })
+      }
+
+      const jwt=require('jsonwebtoken')
+      const decoded=jwt.verify(refreshToken,process.env.JWT_REFRESH_SECRET) as any;
+
+      if (decoded.isBlocked) {
+        res.clearCookie('access_token');
+        res.clearCookie('refresh_token');
+        return res.status(HttpStatusCode.UNAUTHORIZED).json({ 
+          error: 'User is blocked' 
+        });
+      }
+
+      const newAccessToken = jwt.sign(
+        {
+          id: decoded.id,
+          email: decoded.email,
+          role: decoded.role,
+          isBlocked: decoded.isBlocked
+        },
+        process.env.JWT_ACCESS_SECRET,
+        { expiresIn: '15m' }
+      );
+
+      res.cookie('access_token', newAccessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 15 * 60 * 1000 // 15 minutes
+      });
+
+      // Return user data
+      res.status(HttpStatusCode.OK).json({
+        user: {
+          id: decoded.id,
+          email: decoded.email,
+          role: decoded.role,
+          isBlocked: decoded.isBlocked
+        },
+        accessToken: newAccessToken
+      });
+
+    } catch (error) {
+      res.clearCookie('access_token');
+      res.clearCookie('refresh_token');
+      res.status(HttpStatusCode.UNAUTHORIZED).json({ 
+        error: 'Invalid refresh token' 
+      });
     }
-    res.status(HttpStatusCode.OK).json({ user: req.user });
   }
 
   async logout(req:Request,res:Response){
     try {
-      const token = req.cookies.auth_user || req.cookies.auth_interviewer || req.cookies.auth_admin;
       
-      if (token) {
-        const decoded = require('jsonwebtoken').decode(token);
-        const userRole = decoded?.role;
-        
-        // Clear only the specific role's cookie
-        switch(userRole) {
-          case 'user':
-            res.clearCookie('auth_user');
-            break;
-          case 'interviewer':
-            res.clearCookie('auth_interviewer');
-            break;
-          case 'admin':
-            res.clearCookie('auth_admin');
-            break;
-          default:
-            // Fallback: clear all if role is unknown
-            res.clearCookie('auth_user');
-            res.clearCookie('auth_interviewer');
-            res.clearCookie('auth_admin');
-        }
-      }    
+      res.clearCookie('access_token');
+      res.clearCookie('refresh_token');
+      res.clearCookie('auth_user');
+      res.clearCookie('auth_interviewer');
+      res.clearCookie('auth_admin');
+      res.clearCookie('temp_auth');
+      
       res.status(HttpStatusCode.OK).json({ message: 'Logout successful' });
     } catch (error) {
       res.status(HttpStatusCode.INTERNAL_SERVER).json({
@@ -207,6 +264,173 @@ export class AuthController{
         code: ErrorCode.UNKNOWN_ERROR,
         status: HttpStatusCode.INTERNAL_SERVER
       });
+    }
+  }
+
+  async googleLogin(req:Request,res:Response):Promise<void>{
+    try {
+      console.log('Google login request body:', req.body);
+      const googleData: GoogleLoginDTO = req.body;
+
+      // Validate required fields
+      if (!googleData.email || !googleData.name || !googleData.googleId) {
+
+        console.log('Validation failed:', { 
+          email: !!googleData.email, 
+          name: !!googleData.name, 
+          googleId: !!googleData.googleId 
+        });
+        
+        res.status(HttpStatusCode.BAD_REQUEST).json({
+          error: 'Missing required fields: email, name, and googleId are required',
+          code: ErrorCode.VALIDATION_ERROR,
+          status: HttpStatusCode.BAD_REQUEST
+        });
+        return;
+      }
+
+      const result = await this._googleAuthService.googleLogin(googleData);
+
+      if (!result.needsRoleSelection) {
+        const jwt=require('jsonwebtoken')
+        const payload={
+          id:result.user.id,
+          email:result.user.email,
+          role:result.user.role,
+          isBlocked: false
+        }
+        const accessToken = jwt.sign(payload, process.env.JWT_ACCESS_SECRET, { expiresIn: '15m' });
+        const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+
+        res.cookie('access_token', accessToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 15 * 60 * 1000, // 15 minutes
+          path: '/'
+        });
+
+        res.cookie('refresh_token', refreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+          path: '/'
+        });
+  
+      } else {
+        // Set temporary cookie for role selection
+        res.cookie('temp_auth', result.token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 15 * 60 * 1000, // 15 minutes - temporary
+          path: '/'
+        });
+      }
+
+      res.status(HttpStatusCode.OK).json({
+        user: result.user,
+        needsRoleSelection: result.needsRoleSelection,
+        message: 'Google authentication successful'
+      });
+    } catch (error) {
+        if(error instanceof AppError){
+        res.status(error.status).json({
+          error: error.message,
+          code: error.code,
+          status: error.status
+        })
+      }else{
+        res.status(HttpStatusCode.BAD_REQUEST).json({
+          error: error instanceof Error ? error.message : 'Google authentication failed',
+          code: ErrorCode.UNKNOWN_ERROR,
+          status: HttpStatusCode.BAD_REQUEST
+        })
+      }
+
+    }
+  }
+
+  async selectRole(req: Request, res: Response): Promise<void> {
+    try {
+      console.log('=== SELECT ROLE DEBUG ===');
+      console.log('Request cookies:', req.cookies);
+      console.log('Request user:', (req as any).user);
+
+     const roleData: RoleSelectionDTO = req.body;
+      const userId = (req as any).user?.id; // Assuming you have auth middleware that sets req.user
+
+      console.log('Extracted userId:', userId);
+      console.log('Role data:', roleData);
+
+      if (!userId) {
+        console.log('No userId found - returning 401');
+        res.status(HttpStatusCode.UNAUTHORIZED).json({
+          error: 'User not authenticated',
+          code: ErrorCode.UNAUTHORIZED,
+          status: HttpStatusCode.UNAUTHORIZED
+        });
+        return;
+      }
+
+      if (!roleData.role || !['user', 'interviewer'].includes(roleData.role)) {
+        res.status(HttpStatusCode.BAD_REQUEST).json({
+          error: 'Invalid role. Must be either "user" or "interviewer"',
+          code: ErrorCode.VALIDATION_ERROR,
+          status: HttpStatusCode.BAD_REQUEST
+        });
+        return;
+      }
+
+      const result = await this._googleAuthService.selectRole(userId, roleData);
+      res.clearCookie('temp_auth');
+
+       const jwt = require('jsonwebtoken');
+      const payload = {
+        id: result.user.id,
+        email: result.user.email,
+        role: result.user.role,
+      };
+
+      const accessToken = jwt.sign(payload, process.env.JWT_ACCESS_SECRET, { expiresIn: '15m' });
+      const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+
+      res.cookie('access_token', accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 15 * 60 * 1000, // 15 minutes
+        path: '/'
+      });
+
+      res.cookie('refresh_token', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: '/'
+      });
+
+
+      res.status(HttpStatusCode.OK).json({
+        user: result.user,
+        message: 'Role selection successful'
+      });
+    } catch (error) {
+      if(error instanceof AppError){
+        res.status(error.status).json({
+          error: error.message,
+          code: error.code,
+          status: error.status
+        })
+      }else{
+        res.status(HttpStatusCode.BAD_REQUEST).json({
+          error: error instanceof Error ? error.message : 'Role selection failed',
+          code: ErrorCode.UNKNOWN_ERROR,
+          status: HttpStatusCode.BAD_REQUEST
+        })
+      }
     }
   }
 }

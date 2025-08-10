@@ -38,7 +38,7 @@ export class SignupUserUseCase implements ISignupService{
     const otpExpiry=new Date(Date.now() + 2 * 60 * 1000);
     const hashedPassword=await hashPassword(userDto.password)
 
-    const userDomain = toUserDomain({ ...userDto, password: hashedPassword,otp,otpExpiry,isVerified:false});
+    const userDomain = toUserDomain({ ...userDto, password: hashedPassword,otp,otpExpiry,isVerified:false,isGoogleUser: userDto.isGoogleUser ?? false,googleId: userDto.googleId ?? undefined});
     const user = await this._userRepository.createUser(userDomain);
 
     if (userDto.role === "interviewer" && interviewerDto && user.id) {

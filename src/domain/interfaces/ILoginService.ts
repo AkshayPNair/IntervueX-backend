@@ -9,6 +9,7 @@ export interface ILoginService{
             email:string;
             role:string;
             isApproved?:boolean;
+            isBlocked?:boolean;
         }
     }>
 }

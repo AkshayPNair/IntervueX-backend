@@ -3,12 +3,14 @@ import { User, UserDatabaseResult } from "../../domain/entities/User"
 import { AdminUserListDTO } from "../../domain/dtos/user.dto";
 import { UserWithInterviewerProfile } from "../../domain/interfaces/IUserRepository";
 
+
+
 export const toUserDomain = (dto: SignupUserDTO | UserDatabaseResult): User => {
     const id = ('_id' in dto && dto._id) ? dto._id.toString() : ('id' in dto ? dto.id : undefined);
     return new User(
         dto.name,
         dto.email,
-        dto.password,
+        dto.password??'',
         dto.otp ?? null,
         dto.otpExpiry ?? null,
         dto.isVerified ?? false,
@@ -24,7 +26,9 @@ export const toUserDomain = (dto: SignupUserDTO | UserDatabaseResult): User => {
         dto.resume ?? undefined,
         dto.skills ?? [],
         'createdAt' in dto ? dto.createdAt : undefined,
-        'updatedAt' in dto ? dto.updatedAt : undefined
+        'updatedAt' in dto ? dto.updatedAt : undefined,
+        dto.isGoogleUser??false,
+        dto.googleId??undefined
     );
 }
 
@@ -53,6 +57,8 @@ export const toUserPersistence = (user: User) => {
         profilePicture: user.profilePicture,
         resume: user.resume,
         skills: user.skills,
+        isGoogleUser:user.isGoogleUser,
+        googleId:user.googleId,
         ...(user.id && { _id: user.id })
     }
 }
