@@ -10,7 +10,7 @@ export const toInterviewerDomain = (dto: SignupInterviewerDTO, userId: string): 
         dto.yearsOfExperience,
         dto.professionalBio,
         dto.technicalSkills,
-        dto.resume
+        dto.resume,
     );
 };
 
@@ -29,7 +29,8 @@ export const toInterviewerProfileDTO = (user: User, interviewer: Interviewer): I
         yearsOfExperience: interviewer.yearsOfExperience,
         professionalBio: interviewer.professionalBio,
         technicalSkills: interviewer.technicalSkills || [],
-        resume: interviewer.resume
+        resume: interviewer.resume,
+        hourlyRate:interviewer.hourlyRate
     }
 })
 
@@ -41,6 +42,7 @@ export const toInterviewerPersistence = (interviewer: Interviewer) => ({
     professionalBio: interviewer.professionalBio,
     technicalSkills: interviewer.technicalSkills,
     resume: interviewer.resume,
+    hourlyRate:interviewer.hourlyRate
 });
 
 interface RawUpdateData {
@@ -51,6 +53,7 @@ interface RawUpdateData {
     professionalBio?: string;
     technicalSkills?: string[];
     resume?: string;
+    hourlyRate?:number
 }
 
 export const toUpdateInterviewerProfileDTO = (data: RawUpdateData): UpdateInterviewerProfileDTO => {
@@ -63,6 +66,7 @@ export const toUpdateInterviewerProfileDTO = (data: RawUpdateData): UpdateInterv
     if(data.professionalBio !== undefined) dto.professionalBio = data.professionalBio;
     if(data.technicalSkills !== undefined) dto.technicalSkills = data.technicalSkills;
     if(data.resume !== undefined) dto.resume = data.resume;
+    if(data.hourlyRate !== undefined) dto.hourlyRate = data.hourlyRate;
 
     return dto;
 };
