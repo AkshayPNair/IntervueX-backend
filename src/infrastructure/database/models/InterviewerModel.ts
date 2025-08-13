@@ -7,7 +7,8 @@ export interface IInterviewerDocument extends Document{
     yearsOfExperience?: number;
     professionalBio?: string;
     technicalSkills?: string[];
-    resume?: string
+    resume?: string;
+    hourlyRate?:Number;
 }
 
 const interviewerSchema = new Schema<IInterviewerDocument>({
@@ -18,6 +19,7 @@ const interviewerSchema = new Schema<IInterviewerDocument>({
     professionalBio: String,
     technicalSkills: [String],
     resume: String,
+    hourlyRate:Number,
 },{timestamps: true})
 
 export const InterviewerModel=mongoose.model<IInterviewerDocument>('Interviewer', interviewerSchema);

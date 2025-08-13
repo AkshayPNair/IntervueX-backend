@@ -83,7 +83,7 @@ export interface InterviewerProfileDTO{
     professionalBio?: string;
     yearsOfExperience?: number;
     technicalSkills?: string[];
-    rating?: number; // For display purposes
+    rating?: number; 
     hourlyRate?: number;
 }
 
