@@ -143,6 +143,7 @@ export class UserRepository extends BaseRepository<IUserDocument> implements IUs
           "interviewerProfile.yearsOfExperience": 1,
           "interviewerProfile.professionalBio": 1,
           "interviewerProfile.technicalSkills": 1,
+          "interviewerProfile.hourlyRate":1,
         }
       }
     ]);
@@ -186,6 +187,7 @@ export class UserRepository extends BaseRepository<IUserDocument> implements IUs
           "interviewerProfile.yearsOfExperience": 1,
           "interviewerProfile.professionalBio": 1,
           "interviewerProfile.technicalSkills": 1,
+          "interviewerProfile.hourlyRate":1,
         }
       }
     ]);

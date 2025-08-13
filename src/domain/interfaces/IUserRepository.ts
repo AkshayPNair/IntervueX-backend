@@ -12,6 +12,7 @@ export interface UserWithInterviewerProfile {
         yearsOfExperience?: number;
         professionalBio?: string;
         technicalSkills?: string[];
+        hourlyRate?:number;
     };
 }
 
