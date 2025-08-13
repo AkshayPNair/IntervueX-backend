@@ -6,6 +6,7 @@ export class Interviewer {
       public yearsOfExperience?: number,
       public professionalBio?: string,
       public technicalSkills?: string[],
-      public resume?: string
+      public resume?: string,
+      public hourlyRate?:number
     ) {}
   }
