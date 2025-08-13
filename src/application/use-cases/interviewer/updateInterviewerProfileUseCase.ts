@@ -35,13 +35,14 @@ export class UpdateInterviewerProfileUseCase{
             await this._userRepository.updateUser(userId, { name: updateData.name });
           }
 
-        const profileUpdateData: Partial<SignupInterviewerDTO> = {};
+        const profileUpdateData: Partial<UpdateInterviewerProfileDTO> = {};
         if (updateData.profilePic !== undefined) profileUpdateData.profilePic = updateData.profilePic;
         if (updateData.jobTitle !== undefined) profileUpdateData.jobTitle = updateData.jobTitle;
         if (updateData.yearsOfExperience !== undefined) profileUpdateData.yearsOfExperience = updateData.yearsOfExperience;
         if (updateData.professionalBio !== undefined) profileUpdateData.professionalBio = updateData.professionalBio;
         if (updateData.technicalSkills !== undefined) profileUpdateData.technicalSkills = updateData.technicalSkills;
         if (updateData.resume !== undefined) profileUpdateData.resume = updateData.resume;
+        if (updateData.hourlyRate !== undefined) profileUpdateData.hourlyRate = updateData.hourlyRate;
 
         if (Object.keys(profileUpdateData).length > 0) {
             await this._interviewerRepository.updateByUserId(userId, profileUpdateData);

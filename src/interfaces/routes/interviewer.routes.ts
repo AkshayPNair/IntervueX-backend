@@ -9,22 +9,33 @@ import { uploadFields,handleCombinedUploads } from '../middleware/combinedUpload
 import { GetVerificationStatusUseCase } from '../../application/use-cases/interviewer/getVerificationStatusUseCase';
 import { GetInterviewerProfileUseCase } from '../../application/use-cases/interviewer/getInterviewerProfileUseCase';
 import { UpdateInterviewerProfileUseCase } from '../../application/use-cases/interviewer/updateInterviewerProfileUseCase';
+import { SaveSlotRuleUseCase } from '../../application/use-cases/interviewer/saveSlotRuleUseCase';
+import { GetSlotRuleUseCase } from '../../application/use-cases/interviewer/getSlotRuleUseCase';
+import { SlotRuleRepository } from '../../infrastructure/database/repositories/slotRuleRepository';
 
 const router= express.Router()
 router.use(authenticateToken,requireInterviewer)
 
 const userRepository=new UserRepository()
 const interviewerRespository=new InterviewerRepository()
+const slotRuleRepository=new SlotRuleRepository()
+
 const submitVerificationUseCase=new SubmitVerificationUseCase(userRepository,interviewerRespository);
 const getVerificationStatusUseCase=new GetVerificationStatusUseCase(userRepository,interviewerRespository);
 const getInterviewerProfileUseCase=new GetInterviewerProfileUseCase(userRepository,interviewerRespository)
 const updateInterviewerProfileUseCase=new UpdateInterviewerProfileUseCase(userRepository,interviewerRespository)
-const interviewerController=new InterviewerController(submitVerificationUseCase,getVerificationStatusUseCase,getInterviewerProfileUseCase,updateInterviewerProfileUseCase)
+const saveSlotRuleUseCase=new SaveSlotRuleUseCase(slotRuleRepository)
+const getSlotRuleUseCase=new GetSlotRuleUseCase(slotRuleRepository)
+const interviewerController=new InterviewerController(submitVerificationUseCase,getVerificationStatusUseCase,getInterviewerProfileUseCase,updateInterviewerProfileUseCase,saveSlotRuleUseCase,getSlotRuleUseCase)
 
 
 router.post('/submit-verification',uploadFields,handleCombinedUploads,(req,res)=>interviewerController.submitVerification(req,res))
 router.get('/verification-status',(req,res)=>interviewerController.getVerificationStatus(req,res))
+
 router.get('/profile',(req,res)=>interviewerController.getProfile(req,res))
 router.put('/profile',uploadFields,handleCombinedUploads,(req,res)=>interviewerController.updateProfile(req,res))
+
+router.post('/slot-rules',(req,res)=>interviewerController.saveSlotRule(req,res))
+router.get('/slot-rules',(req,res)=>interviewerController.getSlotRule(req,res))
 
 export default router 
