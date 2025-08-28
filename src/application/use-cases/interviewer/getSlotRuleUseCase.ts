@@ -4,8 +4,9 @@ import { toSlotRuleResponseDTO, getDefaultSlotRuleResponseDTO } from '../../mapp
 import { AppError } from '../../error/AppError';
 import { ErrorCode } from '../../error/ErrorCode';
 import { HttpStatusCode } from '../../../utils/HttpStatusCode';
+import { IGetSlotRuleService } from '../../../domain/interfaces/IGetSlotRuleService';
 
-export class GetSlotRuleUseCase{
+export class GetSlotRuleUseCase implements IGetSlotRuleService{
     constructor(private _slotRuleRepository:ISlotRuleRepository){}
 
     async execute(interviewerId:string):Promise<SlotRuleResponseDTO>{

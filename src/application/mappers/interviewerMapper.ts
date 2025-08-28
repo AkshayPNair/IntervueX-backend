@@ -1,3 +1,4 @@
+import { UserWithInterviewerProfile } from "../../domain/interfaces/IUserRepository";
 import { SignupInterviewerDTO, InterviewerProfileDTO, UpdateInterviewerProfileDTO } from "../../domain/dtos/interviewer.dto";
 import { Interviewer } from "../../domain/entities/Interviewer";
 import { User } from '../../domain/entities/User'
@@ -11,6 +12,7 @@ export const toInterviewerDomain = (dto: SignupInterviewerDTO, userId: string): 
         dto.professionalBio,
         dto.technicalSkills,
         dto.resume,
+        dto.hourlyRate
     );
 };
 
@@ -33,6 +35,30 @@ export const toInterviewerProfileDTO = (user: User, interviewer: Interviewer): I
         hourlyRate:interviewer.hourlyRate
     }
 })
+
+export const mapRepositoryToInterviewerDTO=(
+    interviewer:UserWithInterviewerProfile
+):InterviewerProfileDTO=>{
+    return{
+        user:{
+            id: interviewer._id,
+            name: interviewer.name,
+            email: interviewer.email,
+            isVerified: true, 
+            isApproved: true, 
+            totalSessions: 0,
+        },
+        profile: {
+            profilePic: interviewer.interviewerProfile?.profilePic,
+            jobTitle: interviewer.interviewerProfile?.jobTitle,
+            yearsOfExperience: interviewer.interviewerProfile?.yearsOfExperience,
+            professionalBio: interviewer.interviewerProfile?.professionalBio,
+            technicalSkills: interviewer.interviewerProfile?.technicalSkills || [],
+            resume: undefined, 
+            hourlyRate: interviewer.interviewerProfile?.hourlyRate
+        }
+    }
+}
 
 export const toInterviewerPersistence = (interviewer: Interviewer) => ({
     userId: interviewer.userId,

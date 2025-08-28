@@ -34,4 +34,5 @@ export interface IUserRepository{
     updateUserProfile(userId:string,profileData:{name?:string; profilePicture?:string; resume?:string; skills?:string[]}):Promise<User|null>;
     findApprovedInterviewersWithProfiles():Promise<UserWithInterviewerProfile[]>;
     findApprovedInterviewerById(interviewerId: string): Promise<UserWithInterviewerProfile | null>;
+    findAdmin(): Promise<User | null>;
 }

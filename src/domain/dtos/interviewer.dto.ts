@@ -5,6 +5,7 @@ export interface SignupInterviewerDTO {
     professionalBio?: string;
     technicalSkills?: string[];
     resume?: string;
+    hourlyRate?:number;
 }
 
 export interface InterviewerProfileDTO{

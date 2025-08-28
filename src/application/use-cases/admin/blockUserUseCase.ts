@@ -1,8 +1,9 @@
 import { IUserRepository } from "../../../domain/interfaces/IUserRepository";
 import {AppError} from "../../error/AppError";
 import { ErrorCode } from '../../error/ErrorCode'
+import { IBlockUserService } from "../../../domain/interfaces/IBlockUserService";
 
-export class BlockUserUseCase{
+export class BlockUserUseCase implements IBlockUserService{
     constructor(private _userRepository:IUserRepository){}
 
     async execute(userId: string) {

@@ -4,8 +4,9 @@ import { ErrorCode } from "../../error/ErrorCode";
 import { HttpStatusCode } from "../../../utils/HttpStatusCode";
 import { UpdateUserProfileDTO, UserProfileDTO } from "../../../domain/dtos/user.dto";
 import { toUserProfileDTO } from "../../mappers/userMapper";
+import { IUpdateUserProfileService } from "../../../domain/interfaces/IUpdateUserProfileService";
 
-export class UpdateUserProfileUseCase {
+export class UpdateUserProfileUseCase implements IUpdateUserProfileService{
     constructor(
         private _userRepository: IUserRepository
     ) { }

@@ -19,3 +19,21 @@ export interface SlotRuleResponseDTO{
     createdAt:Date;
     updatedAt:Date;
 }
+
+export interface GenerateAvailableSlotsDTO{
+    interviewerId:string;
+    selectedDate:string;
+}
+
+export interface TimeSlotDTO{
+    startTime:string;
+    endTime:string;
+    available:boolean;
+    isBooked:boolean
+}
+
+export interface AvailableSlotResponseDTO{
+    date:string;
+    weekday:string;
+    slots:TimeSlotDTO[];
+}

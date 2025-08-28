@@ -3,8 +3,9 @@ import { IInterviewerRepository } from "../../../domain/interfaces/IInterviewerR
 import { AppError } from "../../error/AppError";
 import { ErrorCode } from "../../error/ErrorCode";
 import { HttpStatusCode } from "../../../utils/HttpStatusCode";
+import { IGetVerificationStatusService } from "../../../domain/interfaces/IGetVerificationStatusService";
 
-export class GetVerificationStatusUseCase{
+export class GetVerificationStatusUseCase implements IGetVerificationStatusService{
     constructor(
         private _userRepository:IUserRepository,
         private _interviewerRepository:IInterviewerRepository

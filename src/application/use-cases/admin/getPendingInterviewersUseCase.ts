@@ -1,7 +1,8 @@
 import { IUserRepository } from "../../../domain/interfaces/IUserRepository";
 import { IInterviewerRepository } from "../../../domain/interfaces/IInterviewerRepository";
+import { IGetPendingInterviewersService } from "../../../domain/interfaces/IGetPendingInterviewersService";
 
-export class GetPendingInterviewersUseCase{
+export class GetPendingInterviewersUseCase implements IGetPendingInterviewersService{
     constructor(
         private _userRepository: IUserRepository,
         private _interviewerRepository:IInterviewerRepository

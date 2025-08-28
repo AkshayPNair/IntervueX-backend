@@ -4,8 +4,9 @@ import { toInterviewerProfileDTO } from "../../mappers/userMapper";
 import { AppError } from "../../error/AppError";
 import { ErrorCode } from "../../error/ErrorCode";
 import { HttpStatusCode } from "../../../utils/HttpStatusCode";
+import { IGetInterviewerByIdService } from "../../../domain/interfaces/IGetInterviewerByIdService";
 
-export class GetInterviewerByIdUseCase{
+export class GetInterviewerByIdUseCase implements IGetInterviewerByIdService{
     constructor(
         private _userRepository:IUserRepository
     ){}

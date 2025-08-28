@@ -4,8 +4,9 @@ import { toSlotRuleResponseDTO } from '../../mappers/slotRuleMapper';
 import { AppError } from '../../error/AppError';
 import { ErrorCode } from '../../error/ErrorCode';
 import { HttpStatusCode } from '../../../utils/HttpStatusCode';
+import { ISaveSlotRuleService } from '../../../domain/interfaces/ISaveSlotRuleService';
 
-export class SaveSlotRuleUseCase {
+export class SaveSlotRuleUseCase implements ISaveSlotRuleService{
     constructor(private _slotRuleRepository: ISlotRuleRepository) { }
 
     async execute(interviewerId: string, data: SaveSlotRuleDTO): Promise<SlotRuleResponseDTO> {

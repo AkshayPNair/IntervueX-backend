@@ -3,8 +3,9 @@ import { AppError } from "../../error/AppError";
 import { ErrorCode } from "../../../application/error/ErrorCode";
 import { HttpStatusCode } from "../../../utils/HttpStatusCode";
 import { IEmailService } from "../../../domain/interfaces/IEmailService";
+import { IApproveInterviewerService } from "../../../domain/interfaces/IApproveInterviewerService";
 
-export class ApproveInterviewerUseCase {
+export class ApproveInterviewerUseCase implements IApproveInterviewerService{
     constructor(
       private _userRepository: IUserRepository,
       private _emailService:IEmailService

@@ -193,7 +193,12 @@ export class UserRepository extends BaseRepository<IUserDocument> implements IUs
     ]);
     return results.length > 0 ? results[0] : null;
   }
- 
+
+  async findAdmin(): Promise<User | null> {
+    const admin = await this.model.findOne({ role: 'admin' }).exec();
+    return admin ? toUserDomain(toUserDatabaseResult(admin)) : null;
+  }
+
 }
 
 

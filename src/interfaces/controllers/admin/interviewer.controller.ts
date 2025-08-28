@@ -1,20 +1,20 @@
 import { Request, Response } from 'express';
-import { GetPendingInterviewersUseCase } from '../../../application/use-cases/admin/getPendingInterviewersUseCase';
-import { ApproveInterviewerUseCase } from '../../../application/use-cases/admin/approveInterviewerUseCase';
-import { RejectInterviewerUseCase } from '../../../application/use-cases/admin/rejectInterviewerUseCase';
+import { IGetPendingInterviewersService } from '../../../domain/interfaces/IGetPendingInterviewersService';
+import { IApproveInterviewerService } from '../../../domain/interfaces/IApproveInterviewerService';
+import { IRejectInterviewerService } from '../../../domain/interfaces/IRejectInterviewerService';
 import { HttpStatusCode } from '../../../utils/HttpStatusCode';
 import { AppError } from '../../../application/error/AppError';
 
 export class AdminInterviewerController {
     constructor(
-        private _getPendingInterviewersUseCase: GetPendingInterviewersUseCase,
-        private _approveInterviewewUseCase: ApproveInterviewerUseCase,
-        private _rejectInterviewerUseCase: RejectInterviewerUseCase
+        private _getPendingInterviewersService: IGetPendingInterviewersService,
+        private _approveInterviewerService: IApproveInterviewerService,
+        private _rejectInterviewerService: IRejectInterviewerService
     ) { }
 
     async getPendingInterviewers(req: Request, res: Response): Promise<void> {
         try {
-            const result = await this._getPendingInterviewersUseCase.execute()
+            const result = await this._getPendingInterviewersService.execute()
             res.status(HttpStatusCode.OK).json(result)
         } catch (error) {
             if (error instanceof AppError) {
@@ -36,7 +36,7 @@ export class AdminInterviewerController {
     async approveInterviewer(req: Request, res: Response): Promise<void> {
         try {
             const { id } = req.params;
-            const result = await this._approveInterviewewUseCase.execute(id)
+            const result = await this._approveInterviewerService.execute(id)
             res.status(HttpStatusCode.OK).json(result)
         } catch (error) {
             if (error instanceof AppError) {
@@ -59,7 +59,7 @@ export class AdminInterviewerController {
         try {
             const { id } = req.params;
             const {rejectedReason}=req.body;
-            const result = await this._rejectInterviewerUseCase.execute(id,rejectedReason);
+            const result = await this._rejectInterviewerService.execute(id,rejectedReason);
             res.status(HttpStatusCode.OK).json(result);
         } catch (error) {
             if (error instanceof AppError) {
