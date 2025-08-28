@@ -3,8 +3,10 @@ import { AppError } from "../../error/AppError";
 import { ErrorCode } from "../../../application/error/ErrorCode";
 import { HttpStatusCode } from "../../../utils/HttpStatusCode";
 import { IEmailService } from "../../../domain/interfaces/IEmailService";
+import { IRejectInterviewerService } from "../../../domain/interfaces/IRejectInterviewerService";
 
-export class RejectInterviewerUseCase {
+
+export class RejectInterviewerUseCase implements IRejectInterviewerService {
   constructor(
     private _userRepository: IUserRepository,
     private _emailService: IEmailService

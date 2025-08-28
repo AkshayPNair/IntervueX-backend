@@ -1,0 +1,83 @@
+import { BookingStatus,PaymentMethod } from "../entities/Booking";
+
+export interface CreateBookingDTO{
+    interviewerId:string;
+    date:string;
+    startTime:string;
+    endTime:string;
+    amount:number;
+    paymentMethod:PaymentMethod;
+    paymentId?:string;
+}
+
+export interface BookingResponseDTO{
+    id:string;
+    userId:string;
+    interviewerId:string;
+    interviewerName:string;
+    interviewerProfilePicture?:string;
+    interviewerJobTitle?:string;
+    interviewerExperience?:number;
+    date:string;
+    startTime:string;
+    endTime:string;
+    amount:number;
+    adminFee:number;
+    interviewerAmount:number;
+    status:BookingStatus;
+    paymentMethod:PaymentMethod;
+    paymentId?:string;
+    cancelReason?:string;
+    createdAt:Date;
+    updatedAt:Date;
+}
+
+export interface InterviewerBookingResponseDTO{
+    id: string;
+    userId: string;
+    interviewerId: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    amount: number;
+    adminFee: number;
+    interviewerAmount: number;
+    status: BookingStatus;
+    paymentMethod: PaymentMethod;
+    paymentId?: string;
+    cancelReason?: string;
+    createdAt: Date;
+    updatedAt:Date;
+    userName: string;
+    userEmail: string;
+    userProfilePicture: string;
+}
+
+export interface BookingFilterDTO{
+    userId?:string;
+    interviewerId?:string;
+    status?:BookingStatus;
+    startDate?:string;
+    endDate?:string;
+}
+
+export interface RazorpayOrderDTO{
+    amount:number;
+    currency:string;
+    receipt:string;
+}
+
+export interface RazorpayOrderResponseDTO{
+    id:string;
+    amount:number;
+    currency:string;
+    receipt:string;
+}
+
+export interface CancelBookingDTO{
+    bookingId:string;
+    reason:string;
+}
+export interface CompleteBookingDTO{
+    bookingId:string;
+}

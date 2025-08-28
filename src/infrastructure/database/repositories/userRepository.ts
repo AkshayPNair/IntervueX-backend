@@ -143,6 +143,7 @@ export class UserRepository extends BaseRepository<IUserDocument> implements IUs
           "interviewerProfile.yearsOfExperience": 1,
           "interviewerProfile.professionalBio": 1,
           "interviewerProfile.technicalSkills": 1,
+          "interviewerProfile.hourlyRate":1,
         }
       }
     ]);
@@ -186,12 +187,18 @@ export class UserRepository extends BaseRepository<IUserDocument> implements IUs
           "interviewerProfile.yearsOfExperience": 1,
           "interviewerProfile.professionalBio": 1,
           "interviewerProfile.technicalSkills": 1,
+          "interviewerProfile.hourlyRate":1,
         }
       }
     ]);
     return results.length > 0 ? results[0] : null;
   }
- 
+
+  async findAdmin(): Promise<User | null> {
+    const admin = await this.model.findOne({ role: 'admin' }).exec();
+    return admin ? toUserDomain(toUserDatabaseResult(admin)) : null;
+  }
+
 }
 
 

@@ -1,3 +1,4 @@
+import { UserWithInterviewerProfile } from "../../domain/interfaces/IUserRepository";
 import { SignupInterviewerDTO, InterviewerProfileDTO, UpdateInterviewerProfileDTO } from "../../domain/dtos/interviewer.dto";
 import { Interviewer } from "../../domain/entities/Interviewer";
 import { User } from '../../domain/entities/User'
@@ -10,7 +11,8 @@ export const toInterviewerDomain = (dto: SignupInterviewerDTO, userId: string): 
         dto.yearsOfExperience,
         dto.professionalBio,
         dto.technicalSkills,
-        dto.resume
+        dto.resume,
+        dto.hourlyRate
     );
 };
 
@@ -29,9 +31,34 @@ export const toInterviewerProfileDTO = (user: User, interviewer: Interviewer): I
         yearsOfExperience: interviewer.yearsOfExperience,
         professionalBio: interviewer.professionalBio,
         technicalSkills: interviewer.technicalSkills || [],
-        resume: interviewer.resume
+        resume: interviewer.resume,
+        hourlyRate:interviewer.hourlyRate
     }
 })
+
+export const mapRepositoryToInterviewerDTO=(
+    interviewer:UserWithInterviewerProfile
+):InterviewerProfileDTO=>{
+    return{
+        user:{
+            id: interviewer._id,
+            name: interviewer.name,
+            email: interviewer.email,
+            isVerified: true, 
+            isApproved: true, 
+            totalSessions: 0,
+        },
+        profile: {
+            profilePic: interviewer.interviewerProfile?.profilePic,
+            jobTitle: interviewer.interviewerProfile?.jobTitle,
+            yearsOfExperience: interviewer.interviewerProfile?.yearsOfExperience,
+            professionalBio: interviewer.interviewerProfile?.professionalBio,
+            technicalSkills: interviewer.interviewerProfile?.technicalSkills || [],
+            resume: undefined, 
+            hourlyRate: interviewer.interviewerProfile?.hourlyRate
+        }
+    }
+}
 
 export const toInterviewerPersistence = (interviewer: Interviewer) => ({
     userId: interviewer.userId,
@@ -41,6 +68,7 @@ export const toInterviewerPersistence = (interviewer: Interviewer) => ({
     professionalBio: interviewer.professionalBio,
     technicalSkills: interviewer.technicalSkills,
     resume: interviewer.resume,
+    hourlyRate:interviewer.hourlyRate
 });
 
 interface RawUpdateData {
@@ -51,6 +79,7 @@ interface RawUpdateData {
     professionalBio?: string;
     technicalSkills?: string[];
     resume?: string;
+    hourlyRate?:number
 }
 
 export const toUpdateInterviewerProfileDTO = (data: RawUpdateData): UpdateInterviewerProfileDTO => {
@@ -63,6 +92,7 @@ export const toUpdateInterviewerProfileDTO = (data: RawUpdateData): UpdateInterv
     if(data.professionalBio !== undefined) dto.professionalBio = data.professionalBio;
     if(data.technicalSkills !== undefined) dto.technicalSkills = data.technicalSkills;
     if(data.resume !== undefined) dto.resume = data.resume;
+    if(data.hourlyRate !== undefined) dto.hourlyRate = data.hourlyRate;
 
     return dto;
 };

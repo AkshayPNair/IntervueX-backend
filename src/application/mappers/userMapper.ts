@@ -118,5 +118,5 @@ export const toInterviewerProfileDTO=(user:UserWithInterviewerProfile):Interview
     yearsOfExperience:user.interviewerProfile?.yearsOfExperience,
     technicalSkills:user.interviewerProfile?.technicalSkills||[],
     rating:4.5,
-    hourlyRate:150
+    hourlyRate:user.interviewerProfile?.hourlyRate
 })

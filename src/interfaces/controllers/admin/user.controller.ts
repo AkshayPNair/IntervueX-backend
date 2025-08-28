@@ -1,19 +1,19 @@
 import { Request, Response } from "express";
-import { GetAllUsersUseCase } from "../../../application/use-cases/admin/getAllUsersUseCase";
-import { BlockUserUseCase } from "../../../application/use-cases/admin/blockUserUseCase";
-import { UnblockUserUseCase } from "../../../application/use-cases/admin/unblockUserUseCase";
+import { IGetAllUsersService } from "../../../domain/interfaces/IGetAllUsersService";
+import { IBlockUserService } from "../../../domain/interfaces/IBlockUserService";
+import { IUnblockUserService } from "../../../domain/interfaces/IUnblockUserService";
 import { HttpStatusCode } from "../../../utils/HttpStatusCode";
 
 export class AdminUserController {
     constructor(
-        private _getAllUsersUseCase: GetAllUsersUseCase,
-        private _blockUserUseCase: BlockUserUseCase,
-        private _unblockUserUseCase: UnblockUserUseCase
+        private _getAllUsersService: IGetAllUsersService,
+        private _blockUserService: IBlockUserService,
+        private _unblockUserService: IUnblockUserService
     ) { }
 
     async getAllUsers(req: Request, res: Response) {
         try {
-            const users = await this._getAllUsersUseCase.execute();
+            const users = await this._getAllUsersService.execute();
             res.status(HttpStatusCode.OK).json({ users });
         } catch (error) {
             res.status(HttpStatusCode.INTERNAL_SERVER).json({ 
@@ -24,7 +24,7 @@ export class AdminUserController {
 
     async blockUser(req: Request, res: Response) {
         try {
-            await this._blockUserUseCase.execute(req.params.id);
+            await this._blockUserService.execute(req.params.id);
             res.status(HttpStatusCode.OK).json({ message: "User blocked successfully" });
         } catch (error) {
             res.status(HttpStatusCode.INTERNAL_SERVER).json({ 
@@ -35,7 +35,7 @@ export class AdminUserController {
 
     async unblockUser(req: Request, res: Response) {
         try {
-            await this._unblockUserUseCase.execute(req.params.id);
+            await this._unblockUserService.execute(req.params.id);
             res.status(HttpStatusCode.OK).json({ message: "User unblocked successfully" });
         } catch (error) {
             res.status(HttpStatusCode.INTERNAL_SERVER).json({ 

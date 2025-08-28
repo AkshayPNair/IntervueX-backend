@@ -4,8 +4,9 @@ import { ErrorCode } from "../../error/ErrorCode";
 import { HttpStatusCode } from "../../../utils/HttpStatusCode";
 import { UserProfileDTO } from "../../../domain/dtos/user.dto";
 import { toUserProfileDTO } from "../../mappers/userMapper";
+import { IGetUserProfileService } from "../../../domain/interfaces/IGetUserProfileService";
 
-export class GetUserProfileUseCase {
+export class GetUserProfileUseCase implements IGetUserProfileService{
     constructor(
         private _userRepository: IUserRepository
     ) { }

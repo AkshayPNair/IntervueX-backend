@@ -17,6 +17,7 @@ const emailService = new EmailService();
 
 const userRepository=new UserRepository()
 const interviewerRepository=new InterviewerRepository()
+
 const signupUserUseCase=new SignupUserUseCase(userRepository,interviewerRepository,emailService)
 const verifyOtpUseCase=new VerifyOtpUseCase(userRepository)
 const loginUseCase=new LoginUseCase(userRepository)

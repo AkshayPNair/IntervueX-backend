@@ -5,8 +5,9 @@ import { ErrorCode } from "../../error/ErrorCode";
 import { HttpStatusCode } from "../../../utils/HttpStatusCode";
 import { UpdateInterviewerProfileDTO, InterviewerProfileDTO, SignupInterviewerDTO } from "../../../domain/dtos/interviewer.dto";
 import { toInterviewerProfileDTO} from "../../../application/mappers/interviewerMapper";
+import { IUpdateInterviewerProfileService } from "../../../domain/interfaces/IUpdateInterviewerProfileService";
 
-export class UpdateInterviewerProfileUseCase{
+export class UpdateInterviewerProfileUseCase implements IUpdateInterviewerProfileService{
     constructor(
         private _userRepository:IUserRepository,
         private _interviewerRepository:IInterviewerRepository
@@ -35,13 +36,14 @@ export class UpdateInterviewerProfileUseCase{
             await this._userRepository.updateUser(userId, { name: updateData.name });
           }
 
-        const profileUpdateData: Partial<SignupInterviewerDTO> = {};
+        const profileUpdateData: Partial<UpdateInterviewerProfileDTO> = {};
         if (updateData.profilePic !== undefined) profileUpdateData.profilePic = updateData.profilePic;
         if (updateData.jobTitle !== undefined) profileUpdateData.jobTitle = updateData.jobTitle;
         if (updateData.yearsOfExperience !== undefined) profileUpdateData.yearsOfExperience = updateData.yearsOfExperience;
         if (updateData.professionalBio !== undefined) profileUpdateData.professionalBio = updateData.professionalBio;
         if (updateData.technicalSkills !== undefined) profileUpdateData.technicalSkills = updateData.technicalSkills;
         if (updateData.resume !== undefined) profileUpdateData.resume = updateData.resume;
+        if (updateData.hourlyRate !== undefined) profileUpdateData.hourlyRate = updateData.hourlyRate;
 
         if (Object.keys(profileUpdateData).length > 0) {
             await this._interviewerRepository.updateByUserId(userId, profileUpdateData);

@@ -1,8 +1,9 @@
 import { IUserRepository,UserWithInterviewerProfile } from "../../../domain/interfaces/IUserRepository";
 import { InterviewerProfileDTO } from "../../../domain/dtos/user.dto";
 import { toInterviewerProfileDTO } from "../../mappers/userMapper";
+import { IGetAllInterviewersService } from "../../../domain/interfaces/IGetAllInterviewersService";
 
-export class GetAllInterviewerUseCase{
+export class GetAllInterviewerUseCase implements IGetAllInterviewersService{
     constructor(
         private _userRepository:IUserRepository
     ){}

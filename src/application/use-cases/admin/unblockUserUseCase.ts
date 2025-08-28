@@ -1,8 +1,9 @@
 import { IUserRepository } from "../../../domain/interfaces/IUserRepository";
 import { AppError } from "../../error/AppError";
 import { ErrorCode } from "../../error/ErrorCode";
+import { IUnblockUserService } from "../../../domain/interfaces/IUnblockUserService";
 
-export class UnblockUserUseCase {
+export class UnblockUserUseCase implements IUnblockUserService{
   constructor(private _userRepository: IUserRepository) {}
 
   async execute(userId: string) {

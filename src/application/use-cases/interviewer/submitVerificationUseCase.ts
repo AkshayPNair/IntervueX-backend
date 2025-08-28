@@ -4,8 +4,9 @@ import { AppError } from "../../error/AppError";
 import { ErrorCode } from "../../error/ErrorCode";
 import { HttpStatusCode } from "../../../utils/HttpStatusCode";
 import { SignupInterviewerDTO } from "../../../domain/dtos/interviewer.dto";
+import { ISubmitVerificationService } from "../../../domain/interfaces/ISubmitVerificationService";
 
-export class SubmitVerificationUseCase{
+export class SubmitVerificationUseCase implements ISubmitVerificationService{
     constructor(
         private _userRepository: IUserRepository,
         private _interviewerRepository:IInterviewerRepository

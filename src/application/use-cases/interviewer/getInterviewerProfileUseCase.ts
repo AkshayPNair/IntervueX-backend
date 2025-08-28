@@ -5,8 +5,9 @@ import { ErrorCode } from "../../error/ErrorCode";
 import { HttpStatusCode } from "../../../utils/HttpStatusCode";
 import { InterviewerProfileDTO } from "../../../domain/dtos/interviewer.dto";
 import { toInterviewerProfileDTO } from "../../../application/mappers/interviewerMapper";
+import { IGetInterviewerProfileService } from "../../../domain/interfaces/IGetInterviewerProfileService";
 
-export class GetInterviewerProfileUseCase{
+export class GetInterviewerProfileUseCase implements IGetInterviewerProfileService{
     constructor(
         private _userRepository:IUserRepository,
         private _interviewerRepository:IInterviewerRepository
