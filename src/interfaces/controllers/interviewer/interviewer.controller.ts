@@ -15,6 +15,11 @@ import { IGetSlotRuleService } from '../../../domain/interfaces/IGetSlotRuleServ
 import { SaveSlotRuleDTO } from '../../../domain/dtos/slotRule.dto';
 import { IGetWalletSummaryService } from '../../../domain/interfaces/IGetWalletSummaryService';
 import { IListWalletTransactionsService } from '../../../domain/interfaces/IListWalletTransactionsService';
+import { ISubmitFeedbackService } from '../../../domain/interfaces/ISubmitFeedbackService';
+import { IListInterviewerFeedbacksService } from '../../../domain/interfaces/IListInterviewerFeedbacksService';
+import { IGetInterviewerFeedbackByIdService } from '../../../domain/interfaces/IGetInterviewerFeedbackByIdService';
+import { SubmitFeedbackDTO } from '../../../domain/dtos/feedback.dto';
+import { IGetUserRatingByBookingIdService } from '@/domain/interfaces/IGetUserRatingByBookingIdService';
 
 export class InterviewerController{
     constructor(
@@ -26,7 +31,11 @@ export class InterviewerController{
         private _getSlotRuleService: IGetSlotRuleService,
         private _getInterviewerBookingsService: IGetInterviewerBookingsService,
         private _getWalletSummaryService: IGetWalletSummaryService,
-        private _listWalletTransactionsService: IListWalletTransactionsService
+        private _listWalletTransactionsService: IListWalletTransactionsService,
+        private _submitFeedbackService: ISubmitFeedbackService,
+        private _listFeedbacksService: IListInterviewerFeedbacksService,
+        private _getFeedbackByIdService: IGetInterviewerFeedbackByIdService,
+        private _getUserRatingByBookingIdService:IGetUserRatingByBookingIdService
     ){}
 
     async submitVerification(req:AuthenticatedRequest,res:Response){
@@ -322,6 +331,120 @@ export class InterviewerController{
                   status: HttpStatusCode.INTERNAL_SERVER,
                 });
               }
+        }
+    }
+
+    async submitFeedback(req:AuthenticatedRequest,res:Response){
+        try {
+            if(!req.user){
+                throw new AppError(
+                    ErrorCode.UNAUTHORIZED,
+                    'User not authenticated',
+                    HttpStatusCode.UNAUTHORIZED
+                )
+            }
+            const interviewerId=req.user.id
+            const payload: SubmitFeedbackDTO=req.body
+            if(!payload?.bookingId){
+                throw new AppError(
+                    ErrorCode.VALIDATION_ERROR,
+                    'bookingId is required',
+                    HttpStatusCode.BAD_REQUEST
+                )
+            }
+            const result=await this._submitFeedbackService.execute(interviewerId, interviewerId,payload)
+            res.status(HttpStatusCode.OK).json(result)
+        } catch (error) {
+            if (error instanceof AppError) {
+                res.status(error.status).json({
+                    error: error.message,
+                    code: error.code,
+                    status: error.status
+                });
+            } else {
+                res.status(HttpStatusCode.INTERNAL_SERVER).json({
+                    error: error instanceof Error ? error.message : 'An unexpected error occurred',
+                    code: ErrorCode.UNKNOWN_ERROR,
+                    status: HttpStatusCode.INTERNAL_SERVER
+                })
+            }
+        }
+    }
+
+    async listFeedbacks(req:AuthenticatedRequest,res:Response){
+        try {
+            if(!req.user){
+                throw new AppError(
+                    ErrorCode.UNAUTHORIZED,
+                    'User not authenticated',
+                    HttpStatusCode.UNAUTHORIZED
+                )
+            }
+            const interviewerId = req.user.id
+            const data = await this._listFeedbacksService.execute(interviewerId)
+            res.status(HttpStatusCode.OK).json(data)
+        } catch (error) {
+            if (error instanceof AppError) {
+                res.status(error.status).json({ error: error.message, code: error.code, status: error.status });
+            } else {
+                res.status(HttpStatusCode.INTERNAL_SERVER).json({
+                    error: error instanceof Error ? error.message : 'An unexpected error occurred',
+                    code: ErrorCode.UNKNOWN_ERROR,
+                    status: HttpStatusCode.INTERNAL_SERVER
+                })
+            }
+        }
+    }
+
+    async getFeedbackById(req:AuthenticatedRequest,res:Response){
+        try {
+            if(!req.user){
+                throw new AppError(
+                    ErrorCode.UNAUTHORIZED,
+                    'User not authenticated',
+                    HttpStatusCode.UNAUTHORIZED
+                )
+            }
+            const interviewerId = req.user.id
+            const { id } = req.params as { id: string }
+            const data = await this._getFeedbackByIdService.execute(interviewerId, id)
+            res.status(HttpStatusCode.OK).json(data)
+        } catch (error) {
+            if (error instanceof AppError) {
+                res.status(error.status).json({ error: error.message, code: error.code, status: error.status });
+            } else {
+                res.status(HttpStatusCode.INTERNAL_SERVER).json({
+                    error: error instanceof Error ? error.message : 'An unexpected error occurred',
+                    code: ErrorCode.UNKNOWN_ERROR,
+                    status: HttpStatusCode.INTERNAL_SERVER
+                })
+            }
+        }
+    }
+
+     async getUserRatingByBookingId(req: AuthenticatedRequest, res: Response) {
+        try {
+            if (!req.user) {
+                throw new AppError(
+                    ErrorCode.UNAUTHORIZED,
+                    'User not authenticated',
+                    HttpStatusCode.UNAUTHORIZED
+                )
+            }
+            const interviewerId = req.user.id
+            const { bookingId } = req.params as { bookingId: string }
+            const data = await this._getUserRatingByBookingIdService.execute(interviewerId, bookingId)
+            res.status(HttpStatusCode.OK).json(data)
+        } catch (error) {
+            if (error instanceof AppError) {
+                res.status(error.status).json({ error: error.message, code: error.code, status: error.status });
+            } else {
+                res.status(HttpStatusCode.INTERNAL_SERVER).json({
+                    error: error instanceof Error ? error.message : 'An unexpected error occurred',
+                    code: ErrorCode.UNKNOWN_ERROR,
+                    status: HttpStatusCode.INTERNAL_SERVER
+                })
+            }
         }
     }
 

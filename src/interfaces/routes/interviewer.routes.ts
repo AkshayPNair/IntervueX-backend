@@ -17,6 +17,11 @@ import { BookingRepository } from '../../infrastructure/database/repositories/bo
 import { WalletRepository } from '../../infrastructure/database/repositories/walletRepository';
 import { GetWalletSummaryUseCase } from '../../application/use-cases/wallet/getWalletSummaryUseCase';
 import { ListWalletTransactionsUseCase } from '../../application/use-cases/wallet/listWalletTransactionsUseCase';
+import { FeedbackRepository } from '../../infrastructure/database/repositories/feedbackRepository';
+import { SubmitFeedbackUseCase } from '../../application/use-cases/interviewer/submitFeedbackUseCase';
+import { ListInterviewerFeedbacksUseCase } from '../../application/use-cases/interviewer/listInterviewerFeedbacksUseCase';
+import { GetInterviewerFeedbackByIdUseCase } from '../../application/use-cases/interviewer/getInterviewerFeedbackByIdUseCase';
+import { GetUserRatingByBookingIdUseCase } from '../../application/use-cases/interviewer/getUserRatingByBookingIdUseCase';
 
 
 const router= express.Router()
@@ -27,6 +32,7 @@ const interviewerRespository=new InterviewerRepository()
 const slotRuleRepository=new SlotRuleRepository()
 const bookingRepository=new BookingRepository()
 const walletRepository=new WalletRepository()
+const feedbackRepository=new FeedbackRepository()
 
 const submitVerificationUseCase=new SubmitVerificationUseCase(userRepository,interviewerRespository);
 const getVerificationStatusUseCase=new GetVerificationStatusUseCase(userRepository,interviewerRespository);
@@ -37,7 +43,26 @@ const getSlotRuleUseCase=new GetSlotRuleUseCase(slotRuleRepository)
 const getInterviewerBookingsUseCase=new GetInterviewerBookingsUseCase(bookingRepository,userRepository)
 const getWalletSummaryUseCase = new GetWalletSummaryUseCase(walletRepository);
 const listWalletTransactionsUseCase = new ListWalletTransactionsUseCase(walletRepository);
-const interviewerController=new InterviewerController(submitVerificationUseCase,getVerificationStatusUseCase,getInterviewerProfileUseCase,updateInterviewerProfileUseCase,saveSlotRuleUseCase,getSlotRuleUseCase,getInterviewerBookingsUseCase,getWalletSummaryUseCase, listWalletTransactionsUseCase)
+const submitFeedbackUseCase = new SubmitFeedbackUseCase(feedbackRepository, bookingRepository)
+const listInterviewerFeedbacksUseCase = new ListInterviewerFeedbacksUseCase(feedbackRepository)
+const getInterviewerFeedbackByIdUseCase = new GetInterviewerFeedbackByIdUseCase(feedbackRepository)
+const getUserRatingByBookingIdUseCase=new GetUserRatingByBookingIdUseCase(feedbackRepository)
+
+const interviewerController=new InterviewerController(
+    submitVerificationUseCase,
+    getVerificationStatusUseCase,
+    getInterviewerProfileUseCase,
+    updateInterviewerProfileUseCase,
+    saveSlotRuleUseCase,
+    getSlotRuleUseCase,
+    getInterviewerBookingsUseCase,
+    getWalletSummaryUseCase, 
+    listWalletTransactionsUseCase,
+    submitFeedbackUseCase,
+    listInterviewerFeedbacksUseCase,
+    getInterviewerFeedbackByIdUseCase,
+    getUserRatingByBookingIdUseCase
+)
 
 
 router.post('/submit-verification',uploadFields,handleCombinedUploads,(req,res)=>interviewerController.submitVerification(req,res))
@@ -53,5 +78,11 @@ router.get('/bookings',(req,res)=>interviewerController.getBookings(req,res))
 
 router.get('/wallet/summary', (req, res) => interviewerController.getSummary(req, res));
 router.get('/wallet/transactions', (req, res) => interviewerController.getTransactions(req, res));
+
+router.post('/feedback',(req,res)=> interviewerController.submitFeedback(req,res))
+router.get('/feedback',(req,res)=>interviewerController.listFeedbacks(req,res))
+router.get('/feedback/:id',(req,res)=>interviewerController.getFeedbackById(req,res))
+router.get('/rating/:bookingId',(req,res)=>interviewerController.getUserRatingByBookingId(req,res))
+
 
 export default router 

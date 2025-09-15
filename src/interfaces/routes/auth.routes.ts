@@ -35,10 +35,7 @@ router.post('/login',(req,res)=> authController.login(req,res))
 router.post('/forgot-password',(req,res)=>authController.forgetPassword(req,res))
 router.post('/reset-password',(req,res)=>authController.resetPassword(req,res))
 router.post('/logout',(req,res)=> authController.logout(req,res))
-router.post('/google',(req,res)=>{
-    console.log('Google route hit, body:', req.body);
-    authController.googleLogin(req,res)
-})
+router.post('/google',(req,res)=>{authController.googleLogin(req,res)})
 router.post('/google/select-role',authenticateToken,(req,res)=> authController.selectRole(req,res))
 
 export default router

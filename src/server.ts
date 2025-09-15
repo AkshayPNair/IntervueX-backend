@@ -4,7 +4,8 @@ import app from './app'
 import path from 'path';
 import http from 'http'
 import { Server } from 'socket.io'
-import { registerSignaling } from './interfaces/socket/signaling.socket';
+import { registerSignaling } from './interfaces/socket/signaling.socket'
+import { registerChat } from './interfaces/socket/chat.socket'
 
 dotenv.config({ path: path.resolve(__dirname, './config/.env') });
 
@@ -15,7 +16,7 @@ const server = http.createServer(app)
 
 const io = new Server(server, {
   cors: {
-    origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    origin: ['http://localhost:3000', 'http://127.0.0.1:3000','https://dbacb5b29269.ngrok-free.app'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
@@ -23,6 +24,7 @@ const io = new Server(server, {
 })
 
 registerSignaling(io)
+registerChat(io)
 
 mongoose
   .connect(MONGO_URI)
