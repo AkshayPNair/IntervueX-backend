@@ -8,24 +8,24 @@ import { ErrorCode } from '../../../application/error/ErrorCode';
 import { HttpStatusCode } from '../../../utils/HttpStatusCode';
 import { BaseRepository } from './baseRepository';
 
-export class BookingRepository extends BaseRepository<IBookingDocument> implements IBookingRepository{
-    constructor(){
+export class BookingRepository extends BaseRepository<IBookingDocument> implements IBookingRepository {
+    constructor() {
         super(BookingModel)
     }
 
     async createBooking(userId: string, data: CreateBookingDTO): Promise<Booking> {
         try {
-            const userObjectId=new Types.ObjectId(userId)
-            const interviewerObjectId=new Types.ObjectId(data.interviewerId)
+            const userObjectId = new Types.ObjectId(userId)
+            const interviewerObjectId = new Types.ObjectId(data.interviewerId)
 
-            const isAvailable=await this.checkSlotAvailability(
+            const isAvailable = await this.checkSlotAvailability(
                 data.interviewerId,
                 data.date,
                 data.startTime,
                 data.endTime
             )
 
-            if(!isAvailable){
+            if (!isAvailable) {
                 throw new AppError(
                     ErrorCode.VALIDATION_ERROR,
                     "This slot is no longer available",
@@ -33,21 +33,21 @@ export class BookingRepository extends BaseRepository<IBookingDocument> implemen
                 );
             }
 
-            const adminFee=Math.round(data.amount*0.1)
-            const interviewerAmount=data.amount-adminFee
+            const adminFee = Math.round(data.amount * 0.1)
+            const interviewerAmount = data.amount - adminFee
 
-            const bookingDoc=await this.create({
-                userId:userObjectId,
-                interviewerId:interviewerObjectId,
-                date:data.date,
-                startTime:data.startTime,
-                endTime:data.endTime,
-                amount:data.amount,
+            const bookingDoc = await this.create({
+                userId: userObjectId,
+                interviewerId: interviewerObjectId,
+                date: data.date,
+                startTime: data.startTime,
+                endTime: data.endTime,
+                amount: data.amount,
                 adminFee,
                 interviewerAmount,
-                paymentMethod:data.paymentMethod,
-                paymentId:data.paymentId,
-                status:BookingStatus.CONFIRMED
+                paymentMethod: data.paymentMethod,
+                paymentId: data.paymentId,
+                status: BookingStatus.CONFIRMED
             })
 
             return new Booking(
@@ -64,11 +64,13 @@ export class BookingRepository extends BaseRepository<IBookingDocument> implemen
                 bookingDoc.paymentMethod,
                 bookingDoc.paymentId,
                 bookingDoc.cancellationReason,
+                bookingDoc.reminderEmail15Sent ?? false,
+                bookingDoc.reminderEmail5Sent ?? false,
                 bookingDoc.createdAt,
                 bookingDoc.updatedAt
             )
 
-        } catch (error:any) {
+        } catch (error: any) {
             if (error instanceof AppError) {
                 throw error;
             }
@@ -94,16 +96,16 @@ export class BookingRepository extends BaseRepository<IBookingDocument> implemen
         }
     }
 
-    async getBookingById(bookingId:string):Promise<Booking | null>{
+    async getBookingById(bookingId: string): Promise<Booking | null> {
         try {
             const bookingDoc = await this.findById(bookingId)
 
-            if(!bookingDoc){
+            if (!bookingDoc) {
                 return null
             }
 
             return new Booking(
-               (bookingDoc._id as Types.ObjectId).toString(),
+                (bookingDoc._id as Types.ObjectId).toString(),
                 bookingDoc.userId.toString(),
                 bookingDoc.interviewerId.toString(),
                 bookingDoc.date,
@@ -116,10 +118,12 @@ export class BookingRepository extends BaseRepository<IBookingDocument> implemen
                 bookingDoc.paymentMethod,
                 bookingDoc.paymentId,
                 bookingDoc.cancellationReason,
+                bookingDoc.reminderEmail15Sent ?? false,
+                bookingDoc.reminderEmail5Sent ?? false,
                 bookingDoc.createdAt,
                 bookingDoc.updatedAt
             )
-        } catch (error:any) {
+        } catch (error: any) {
             if (error.name === 'CastError') {
                 throw new AppError(
                     ErrorCode.VALIDATION_ERROR,
@@ -137,18 +141,18 @@ export class BookingRepository extends BaseRepository<IBookingDocument> implemen
 
     async getBookingsByFilter(filter: BookingFilterDTO): Promise<Booking[]> {
         try {
-            const query:any={}
+            const query: any = {}
 
-            if(filter.userId){
-                query.userId=new Types.ObjectId(filter.userId)
+            if (filter.userId) {
+                query.userId = new Types.ObjectId(filter.userId)
             }
 
-            if(filter.interviewerId){
-                query.interviewerId=new Types.ObjectId(filter.interviewerId)
+            if (filter.interviewerId) {
+                query.interviewerId = new Types.ObjectId(filter.interviewerId)
             }
 
-            if(filter.status){
-                query.status=filter.status
+            if (filter.status) {
+                query.status = filter.status
             }
 
             if (filter.startDate || filter.endDate) {
@@ -177,11 +181,13 @@ export class BookingRepository extends BaseRepository<IBookingDocument> implemen
                 doc.paymentMethod,
                 doc.paymentId,
                 doc.cancellationReason,
+                doc.reminderEmail15Sent ?? false,
+                doc.reminderEmail5Sent ?? false,
                 doc.createdAt,
                 doc.updatedAt
             ));
 
-        } catch (error:any) {
+        } catch (error: any) {
             if (error.name === 'CastError') {
                 throw new AppError(
                     ErrorCode.VALIDATION_ERROR,
@@ -199,12 +205,12 @@ export class BookingRepository extends BaseRepository<IBookingDocument> implemen
 
     async updateBookingStatus(bookingId: string, status: BookingStatus): Promise<Booking | null> {
         try {
-            const updatedDoc=await this.update(bookingId,{
+            const updatedDoc = await this.update(bookingId, {
                 status,
-                updatedAt:new Date()
+                updatedAt: new Date()
             })
 
-            if(!updatedDoc){
+            if (!updatedDoc) {
                 return null
             }
 
@@ -222,10 +228,12 @@ export class BookingRepository extends BaseRepository<IBookingDocument> implemen
                 updatedDoc.paymentMethod,
                 updatedDoc.paymentId,
                 updatedDoc.cancellationReason,
+                updatedDoc.reminderEmail15Sent ?? false,
+                updatedDoc.reminderEmail5Sent ?? false,
                 updatedDoc.createdAt,
                 updatedDoc.updatedAt
             )
-        } catch (error:any) {
+        } catch (error: any) {
             if (error.name === 'CastError') {
                 throw new AppError(
                     ErrorCode.VALIDATION_ERROR,
@@ -241,15 +249,15 @@ export class BookingRepository extends BaseRepository<IBookingDocument> implemen
         }
     }
 
-    async cancelBooking(bookingId:string, reason:string):Promise<Booking | null>{
+    async cancelBooking(bookingId: string, reason: string): Promise<Booking | null> {
         try {
-            const updatedDoc=await this.update(bookingId,{
-                status:BookingStatus.CANCELLED,
-                cancellationReason:reason,
-                updatedAt:new Date()
+            const updatedDoc = await this.update(bookingId, {
+                status: BookingStatus.CANCELLED,
+                cancellationReason: reason,
+                updatedAt: new Date()
             })
 
-            if(!updatedDoc){
+            if (!updatedDoc) {
                 return null
             }
 
@@ -267,14 +275,16 @@ export class BookingRepository extends BaseRepository<IBookingDocument> implemen
                 updatedDoc.paymentMethod,
                 updatedDoc.paymentId,
                 updatedDoc.cancellationReason,
+                updatedDoc.reminderEmail15Sent ?? false,
+                updatedDoc.reminderEmail5Sent ?? false,
                 updatedDoc.createdAt,
                 updatedDoc.updatedAt
             )
-        } catch (error:any) {
+        } catch (error: any) {
             if (error.name === 'CastError') {
                 throw new AppError(
                     ErrorCode.VALIDATION_ERROR,
-                   'Invalid booking ID',
+                    'Invalid booking ID',
                     HttpStatusCode.BAD_REQUEST
                 );
             }
@@ -286,14 +296,14 @@ export class BookingRepository extends BaseRepository<IBookingDocument> implemen
         }
     }
 
-    async completeBooking(bookingId:string):Promise<Booking | null>{
+    async completeBooking(bookingId: string): Promise<Booking | null> {
         try {
-            const updatedDoc=await this.update(bookingId,{
-                status:BookingStatus.COMPLETED,
-                updatedAt:new Date()
+            const updatedDoc = await this.update(bookingId, {
+                status: BookingStatus.COMPLETED,
+                updatedAt: new Date()
             })
 
-            if(!updatedDoc){
+            if (!updatedDoc) {
                 return null
             }
 
@@ -311,14 +321,16 @@ export class BookingRepository extends BaseRepository<IBookingDocument> implemen
                 updatedDoc.paymentMethod,
                 updatedDoc.paymentId,
                 updatedDoc.cancellationReason,
+                updatedDoc.reminderEmail15Sent ?? false,
+                updatedDoc.reminderEmail5Sent ?? false,
                 updatedDoc.createdAt,
                 updatedDoc.updatedAt
             )
-        } catch (error:any) {
+        } catch (error: any) {
             if (error.name === 'CastError') {
                 throw new AppError(
                     ErrorCode.VALIDATION_ERROR,
-                   'Invalid booking ID',
+                    'Invalid booking ID',
                     HttpStatusCode.BAD_REQUEST
                 );
             }
@@ -332,13 +344,13 @@ export class BookingRepository extends BaseRepository<IBookingDocument> implemen
 
     async checkSlotAvailability(interviewerId: string, date: string, startTime: string, endTime: string): Promise<boolean> {
         try {
-            const interviewerObjectId=new Types.ObjectId(interviewerId)
+            const interviewerObjectId = new Types.ObjectId(interviewerId)
 
-            const existingBooking=await this.findOne({
-                interviewerId:interviewerObjectId,
-                date:date,
-                startTime:startTime,
-                endTime:endTime,
+            const existingBooking = await this.findOne({
+                interviewerId: interviewerObjectId,
+                date: date,
+                startTime: startTime,
+                endTime: endTime,
                 status: { $in: [BookingStatus.CONFIRMED, BookingStatus.PENDING, BookingStatus.COMPLETED] }
             });
             return !existingBooking
@@ -350,5 +362,18 @@ export class BookingRepository extends BaseRepository<IBookingDocument> implemen
             );
         }
     }
+
+    async updateReminderFlags(bookingId: string, flags: { reminderEmail15Sent?: boolean; reminderEmail5Sent?: boolean }): Promise<void> {
+        try {
+            await this.update(bookingId, { ...flags, updatedAt: new Date() });
+        } catch (error) {
+            throw new AppError(
+                ErrorCode.DATABASE_ERROR,
+                'Failed to update reminder flags',
+                HttpStatusCode.INTERNAL_SERVER
+            );
+        }
+    }
+
 
 }

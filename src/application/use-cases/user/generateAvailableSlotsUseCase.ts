@@ -94,7 +94,10 @@ export class GenerateAvailableSlotsUseCase implements IGenerateAvailableSlotsSer
 
         const slots=await this.generateTimeSlots(daySlotRule,selectedDate,interviewerId)
 
-        const availableSlots=slots.filter(slot=>!slot.isBooked)
+        const excluded = slotRule.excludedSlotsByDate?.[selectedDate] || []
+        const notExcluded = slots.filter(s => !excluded.some(ex => this.overlaps(s.startTime, s.endTime, ex.startTime, ex.endTime)))
+
+        const availableSlots=notExcluded.filter(slot=>!slot.isBooked)
 
         return {
             date:selectedDate,
@@ -136,6 +139,14 @@ export class GenerateAvailableSlotsUseCase implements IGenerateAvailableSlotsSer
 
         return slots
 
+    }
+
+    private overlaps(aStart:string,aEnd:string,bStart:string,bEnd:string){
+        const aS=this.timeToMinutes(aStart);
+        const aE=this.timeToMinutes(aEnd);
+        const bS=this.timeToMinutes(bStart);
+        const bE=this.timeToMinutes(bEnd);
+        return aS < bE && bS < aE; // proper overlap check
     }
 
     private isValidDateFormat(date: string): boolean {

@@ -20,8 +20,19 @@ import { CreateBookingDTO, RazorpayOrderDTO, CancelBookingDTO, CompleteBookingDT
 import { toUpdateUserProfileDTO } from '../../../application/mappers/userMapper';
 import { toCreateBookingDTO } from '../../../application/mappers/bookingMapper';
 import { ICompleteBookingService } from '../../../domain/interfaces/ICompleteBookingService';
-
-
+import { IListUserFeedbacksService } from '../../../domain/interfaces/IListUserFeedbacksService';
+import { IGetUserFeedbackByIdService } from '../../../domain/interfaces/IGetUserFeedbackByIdService';
+import { ISubmitInterviewerRatingService } from '../../../domain/interfaces/ISubmitInterviewerRatingService';
+import { IGetInterviewerRatingByBookingIdService } from '../../../domain/interfaces/IGetInterviewerRatingByBookingIdService';
+import { SubmitInterviewerFeedbackDTO } from '../../../domain/dtos/feedback.dto';
+import { IGetUserPaymentHistoryService } from '../../../domain/interfaces/IGetUserPaymentHistoryService';
+import { IGetUserDashboardService } from '../../../domain/interfaces/IGetUserDashboardService';
+import { IChangePasswordService } from '../../../domain/interfaces/IChangePasswordService';
+import { ChangePasswordDTO } from '../../../domain/dtos/user.dto';
+import { IDeleteAccountService } from '../../../domain/interfaces/IDeleteAccountService';
+import { PaymentMethod } from '../../../domain/entities/Booking';
+import { INotificationPublisher } from '../../../domain/interfaces/INotificationPublisher';
+import { NotifyEvents } from '../../../interfaces/socket/notificationPublisher';
 
 export class UserController {
     constructor(
@@ -34,14 +45,23 @@ export class UserController {
         private _getUserBookingsService: IGetUserBookingsService,
         private _createRazorpayOrderService: ICreateRazorpayOrderService,
         private _cancelBookingService: ICancelBookingService,
-        private _getWalletSummaryService:IGetWalletSummaryService,
-        private _listWalletTransactionsService:IListWalletTransactionsService,
-        private _completeBookingService:ICompleteBookingService
+        private _getWalletSummaryService: IGetWalletSummaryService,
+        private _listWalletTransactionsService: IListWalletTransactionsService,
+        private _completeBookingService: ICompleteBookingService,
+        private _listFeedbacksService: IListUserFeedbacksService,
+        private _getFeedbackByIdService: IGetUserFeedbackByIdService,
+        private _submitInterviewerRatingService: ISubmitInterviewerRatingService,
+        private _getInterviewerRatingByBookingIdService: IGetInterviewerRatingByBookingIdService,
+        private _getUserPaymentHistoryService: IGetUserPaymentHistoryService,
+        private _getUserDashboardService: IGetUserDashboardService,
+        private _changePasswordService: IChangePasswordService,
+        private _deleteAccountService: IDeleteAccountService,
+        private _notificationPublisher: INotificationPublisher
     ) { }
 
-    async getProfile(req: AuthenticatedRequest, res: Response){
+    async getProfile(req: AuthenticatedRequest, res: Response) {
         try {
-           
+
             if (!req.user) {
                 throw new AppError(
                     ErrorCode.UNAUTHORIZED,
@@ -49,9 +69,9 @@ export class UserController {
                     HttpStatusCode.UNAUTHORIZED
                 )
             }
-            
-            const userId=req.user.id
-            const result=await this._getUserProfileService.execute(userId)
+
+            const userId = req.user.id
+            const result = await this._getUserProfileService.execute(userId)
             res.status(HttpStatusCode.OK).json(result)
 
         } catch (error) {
@@ -67,13 +87,13 @@ export class UserController {
                     code: ErrorCode.UNKNOWN_ERROR,
                     status: HttpStatusCode.INTERNAL_SERVER
                 });
-             }
+            }
         }
     }
 
-    async updateProfile(req:AuthenticatedRequest,res:Response){
+    async changePassword(req: AuthenticatedRequest, res: Response) {
         try {
-            if(!req.user){
+            if (!req.user) {
                 throw new AppError(
                     ErrorCode.UNAUTHORIZED,
                     "User not authenticated",
@@ -81,15 +101,60 @@ export class UserController {
                 );
             }
 
-            const userId=req.user.id
-            const files=req.files as {[fieldName:string]:Express.MulterS3.File[]}
+            const userId = req.user.id;
+            const body = req.body as Partial<ChangePasswordDTO>;
+
+            if (!body.currentPassword || !body.newPassword) {
+                throw new AppError(
+                    ErrorCode.VALIDATION_ERROR,
+                    "currentPassword and newPassword are required",
+                    HttpStatusCode.BAD_REQUEST
+                );
+            }
+
+            const dto: ChangePasswordDTO = {
+                currentPassword: body.currentPassword,
+                newPassword: body.newPassword,
+            };
+
+            await this._changePasswordService.execute(userId, dto);
+            res.status(HttpStatusCode.OK).json({ message: "Password changed successfully" });
+        } catch (error) {
+            if (error instanceof AppError) {
+                res.status(error.status).json({
+                    error: error.message,
+                    code: error.code,
+                    status: error.status,
+                });
+            } else {
+                res.status(HttpStatusCode.INTERNAL_SERVER).json({
+                    error: error instanceof Error ? error.message : "An unexpected error occurred",
+                    code: ErrorCode.UNKNOWN_ERROR,
+                    status: HttpStatusCode.INTERNAL_SERVER,
+                });
+            }
+        }
+    }
+
+    async updateProfile(req: AuthenticatedRequest, res: Response) {
+        try {
+            if (!req.user) {
+                throw new AppError(
+                    ErrorCode.UNAUTHORIZED,
+                    "User not authenticated",
+                    HttpStatusCode.UNAUTHORIZED
+                );
+            }
+
+            const userId = req.user.id
+            const files = req.files as { [fieldName: string]: Express.MulterS3.File[] }
 
             const rawUpdateData = {
                 name: req.body.name,
                 profilePicture: req.body.profilePic || req.body.profilePicture,
-               resume: req.body.resume || req.body.resumeUrl,
-                skills: Array.isArray(req.body.skills) 
-                    ? req.body.skills 
+                resume: req.body.resume || req.body.resumeUrl,
+                skills: Array.isArray(req.body.skills)
+                    ? req.body.skills
                     : (req.body.skills ? JSON.parse(req.body.skills) : undefined),
             };
 
@@ -115,9 +180,9 @@ export class UserController {
         }
     }
 
-    async getAllInterviewers(req:AuthenticatedRequest,res:Response){
+    async getAllInterviewers(req: AuthenticatedRequest, res: Response) {
         try {
-            if(!req.user){
+            if (!req.user) {
                 throw new AppError(
                     ErrorCode.UNAUTHORIZED,
                     'User not authenticated',
@@ -125,7 +190,7 @@ export class UserController {
                 )
             }
 
-            const result=await this._getAllInterviewersService.execute()
+            const result = await this._getAllInterviewersService.execute()
             res.status(HttpStatusCode.OK).json(result)
         } catch (error) {
             if (error instanceof AppError) {
@@ -144,9 +209,9 @@ export class UserController {
         }
     }
 
-    async getInterviewerById(req:AuthenticatedRequest,res:Response){
+    async getInterviewerById(req: AuthenticatedRequest, res: Response) {
         try {
-            if(!req.user){
+            if (!req.user) {
                 throw new AppError(
                     ErrorCode.UNAUTHORIZED,
                     "User not authenticated",
@@ -154,8 +219,8 @@ export class UserController {
                 )
             }
 
-            const {id}=req.params
-            if(!id){
+            const { id } = req.params
+            if (!id) {
                 throw new AppError(
                     ErrorCode.BAD_REQUEST,
                     'Interviewer ID is required',
@@ -163,7 +228,7 @@ export class UserController {
                 )
             }
 
-            const result=await this._getInterviewerByIdService.execute(id)
+            const result = await this._getInterviewerByIdService.execute(id)
             res.status(HttpStatusCode.OK).json(result)
         } catch (error) {
             if (error instanceof AppError) {
@@ -183,12 +248,12 @@ export class UserController {
         }
     }
 
-    async getAvailableSlots(req:Request,res:Response){
+    async getAvailableSlots(req: Request, res: Response) {
         try {
-            const {id: interviewerId} = req.params
-            const {selectedDate}= req.query
+            const { id: interviewerId } = req.params
+            const { selectedDate } = req.query
 
-            if(!interviewerId || !selectedDate){
+            if (!interviewerId || !selectedDate) {
                 throw new AppError(
                     ErrorCode.VALIDATION_ERROR,
                     "InterviewerId and selectedDate are required",
@@ -196,12 +261,12 @@ export class UserController {
                 )
             }
 
-            const data:GenerateAvailableSlotsDTO={
-                interviewerId:interviewerId as string,
-                selectedDate:selectedDate as string
+            const data: GenerateAvailableSlotsDTO = {
+                interviewerId: interviewerId as string,
+                selectedDate: selectedDate as string
             }
 
-            const result=await this._generateAvailableSlotsService.execute(data);
+            const result = await this._generateAvailableSlotsService.execute(data);
             res.status(HttpStatusCode.OK).json(result)
 
         } catch (error) {
@@ -221,9 +286,9 @@ export class UserController {
         }
     }
 
-    async createBooking(req:AuthenticatedRequest,res:Response){
+    async createBooking(req: AuthenticatedRequest, res: Response) {
         try {
-            if(!req.user){
+            if (!req.user) {
                 throw new AppError(
                     ErrorCode.UNAUTHORIZED,
                     'User not Authenticated',
@@ -231,24 +296,61 @@ export class UserController {
                 )
             }
 
-            const userId=req.user.id
-            const rawBookingData=req.body
+            const userId = req.user.id
+            const rawBookingData = req.body
 
-            if(!rawBookingData.interviewerId || !rawBookingData.date ||
+            if (!rawBookingData.interviewerId || !rawBookingData.date ||
                 !rawBookingData.startTime || !rawBookingData.endTime ||
-                !rawBookingData.amount || !rawBookingData.paymentMethod){
-                    throw new AppError(
-                        ErrorCode.VALIDATION_ERROR,
-                        'Missing required booking information',
-                        HttpStatusCode.BAD_REQUEST
-                    )
+                !rawBookingData.amount || !rawBookingData.paymentMethod) {
+                throw new AppError(
+                    ErrorCode.VALIDATION_ERROR,
+                    'Missing required booking information',
+                    HttpStatusCode.BAD_REQUEST
+                )
             }
 
             const bookingData: CreateBookingDTO = toCreateBookingDTO(rawBookingData)
-            const result = await this._createBookingService.execute(userId,bookingData)
+            const result = await this._createBookingService.execute(userId, bookingData)
+
+            this._notificationPublisher.toInterviewer(result.interviewerId, NotifyEvents.SessionBooked, {
+                bookingId: result.id,
+                userId: result.userId,
+                interviewerId: result.interviewerId,
+                date: result.date,
+                startTime: result.startTime,
+                endTime: result.endTime,
+                amount: result.amount,
+                createdAt: result.createdAt,
+            })
+
+            if (result.paymentMethod === PaymentMethod.WALLET) {
+                // User debit
+                this._notificationPublisher.toUser(result.userId, NotifyEvents.WalletDebit, {
+                    bookingId: result.id,
+                    amount: result.amount,
+                    timestamp: new Date().toISOString(),
+                })
+            }
+            // Interviewer credit
+            this._notificationPublisher.toInterviewer(result.interviewerId, NotifyEvents.WalletCredit, {
+                bookingId: result.id,
+                amount: result.amount,
+                interviewerAmount: result.interviewerAmount,
+                adminFee: result.adminFee,
+                timestamp: new Date().toISOString(),
+            })
+            // Admin credit
+            this._notificationPublisher.toAdmin(NotifyEvents.WalletCredit, {
+                bookingId: result.id,
+                role: 'admin',
+                amount: result.amount,
+                interviewerAmount: result.interviewerAmount,
+                adminFee: result.adminFee,
+                timestamp: new Date().toISOString(),
+            })
 
             res.status(HttpStatusCode.CREATED).json(result)
-            
+
 
         } catch (error) {
             if (error instanceof AppError) {
@@ -267,20 +369,20 @@ export class UserController {
         }
     }
 
-    async getUserBookings(req:AuthenticatedRequest,res:Response){
+    async getUserBookings(req: AuthenticatedRequest, res: Response) {
         try {
-            
+
             if (!req.user) {
                 throw new AppError(
                     ErrorCode.UNAUTHORIZED,
                     "User not authenticated",
                     HttpStatusCode.UNAUTHORIZED
                 );
-           }
+            }
 
             const userId = req.user.id;
             const result = await this._getUserBookingsService.execute(userId);
-            
+
             res.status(HttpStatusCode.OK).json(result);
         } catch (error) {
             if (error instanceof AppError) {
@@ -299,7 +401,7 @@ export class UserController {
         }
     }
 
-    async createRazorpayOrder(req:AuthenticatedRequest,res:Response){
+    async createRazorpayOrder(req: AuthenticatedRequest, res: Response) {
         try {
             if (!req.user) {
                 throw new AppError(
@@ -310,7 +412,7 @@ export class UserController {
             }
 
             const { amount, currency = 'INR' } = req.body;
-            
+
             if (!amount) {
                 throw new AppError(
                     ErrorCode.VALIDATION_ERROR,
@@ -326,7 +428,7 @@ export class UserController {
             };
 
             const result = await this._createRazorpayOrderService.execute(orderData);
-            
+
             res.status(HttpStatusCode.OK).json(result);
 
         } catch (error) {
@@ -346,9 +448,9 @@ export class UserController {
         }
     }
 
-    async cancelBooking(req:AuthenticatedRequest,res:Response){
+    async cancelBooking(req: AuthenticatedRequest, res: Response) {
         try {
-            if(!req.user){
+            if (!req.user) {
                 throw new AppError(
                     ErrorCode.UNAUTHORIZED,
                     'User not authenticated',
@@ -356,10 +458,10 @@ export class UserController {
                 )
             }
 
-            const userId=req.user.id
-            const {bookingId,reason}=req.body
+            const userId = req.user.id
+            const { bookingId, reason } = req.body
 
-            if(!bookingId||!reason){
+            if (!bookingId || !reason) {
                 throw new AppError(
                     ErrorCode.VALIDATION_ERROR,
                     'Booking ID and reason are required',
@@ -367,14 +469,14 @@ export class UserController {
                 )
             }
 
-            const cancelData:CancelBookingDTO={
+            const cancelData: CancelBookingDTO = {
                 bookingId,
                 reason
             }
 
-            await this._cancelBookingService.execute(userId,cancelData)
+            await this._cancelBookingService.execute(userId, cancelData)
 
-            res.status(HttpStatusCode.OK).json({message : 'Booking cancelled successfully'})
+            res.status(HttpStatusCode.OK).json({ message: 'Booking cancelled successfully' })
         } catch (error) {
             if (error instanceof AppError) {
                 res.status(error.status).json({
@@ -393,9 +495,9 @@ export class UserController {
         }
     }
 
-    async getWalletSummary(req:AuthenticatedRequest,res:Response){
+    async getWalletSummary(req: AuthenticatedRequest, res: Response) {
         try {
-            if(!req.user){
+            if (!req.user) {
                 throw new AppError(
                     ErrorCode.UNAUTHORIZED,
                     'User not authenticated',
@@ -403,9 +505,9 @@ export class UserController {
                 )
             }
 
-            const userId=req.user.id
-            const role='user'
-            const data=await this._getWalletSummaryService.execute(userId,role)
+            const userId = req.user.id
+            const role = 'user'
+            const data = await this._getWalletSummaryService.execute(userId, role)
             res.status(HttpStatusCode.OK).json(data)
         } catch (error) {
             if (error instanceof AppError) {
@@ -424,18 +526,18 @@ export class UserController {
         }
     }
 
-    async getWalletTransactions(req:AuthenticatedRequest,res:Response){
+    async getWalletTransactions(req: AuthenticatedRequest, res: Response) {
         try {
-            if(!req.user){
+            if (!req.user) {
                 throw new AppError(
                     ErrorCode.UNAUTHORIZED,
                     'User not authenticated',
                     HttpStatusCode.UNAUTHORIZED
                 )
             }
-            const userId=req.user.id
-            const role='user'
-            const data=await this._listWalletTransactionsService.execute(userId,role)
+            const userId = req.user.id
+            const role = 'user'
+            const data = await this._listWalletTransactionsService.execute(userId, role)
             res.status(HttpStatusCode.OK).json(data)
         } catch (error) {
             if (error instanceof AppError) {
@@ -454,30 +556,247 @@ export class UserController {
         }
     }
 
-    async completeBooking(req:AuthenticatedRequest,res:Response){
+    async completeBooking(req: AuthenticatedRequest, res: Response) {
         try {
             if (!req.user) {
                 throw new AppError(ErrorCode.UNAUTHORIZED, "User not authenticated", HttpStatusCode.UNAUTHORIZED);
-              }
-              const userId = req.user.id;
-              const data: CompleteBookingDTO = { bookingId: req.body.bookingId };
-          
-              if (!data.bookingId) {
-                throw new AppError(ErrorCode.VALIDATION_ERROR, "Booking ID is required", HttpStatusCode.BAD_REQUEST);
-              }
+            }
+            const userId = req.user.id;
+            const data: CompleteBookingDTO = { bookingId: req.body.bookingId };
 
-              await this._completeBookingService.execute(userId,data)
-              res.status(HttpStatusCode.OK).json({message:"Booking marked as completed"})
+            if (!data.bookingId) {
+                throw new AppError(ErrorCode.VALIDATION_ERROR, "Booking ID is required", HttpStatusCode.BAD_REQUEST);
+            }
+
+            await this._completeBookingService.execute(userId, data)
+            res.status(HttpStatusCode.OK).json({ message: "Booking marked as completed" })
         } catch (error) {
             if (error instanceof AppError) {
                 res.status(error.status).json({ error: error.message, code: error.code, status: error.status });
-              } else {
+            } else {
                 res.status(HttpStatusCode.INTERNAL_SERVER).json({
-                  error: error instanceof Error ? error.message : "An unexpected error occurred",
-                  code: ErrorCode.UNKNOWN_ERROR,
-                  status: HttpStatusCode.INTERNAL_SERVER
+                    error: error instanceof Error ? error.message : "An unexpected error occurred",
+                    code: ErrorCode.UNKNOWN_ERROR,
+                    status: HttpStatusCode.INTERNAL_SERVER
                 });
-              }
+            }
+        }
+    }
+
+    async listFeedbacks(req: AuthenticatedRequest, res: Response) {
+        try {
+            if (!req.user) {
+                throw new AppError(
+                    ErrorCode.UNAUTHORIZED,
+                    'User not authenticated',
+                    HttpStatusCode.UNAUTHORIZED
+                )
+            }
+            const userId = req.user.id
+            const data = await this._listFeedbacksService.execute(userId)
+            res.status(HttpStatusCode.OK).json(data)
+        } catch (error) {
+            if (error instanceof AppError) {
+                res.status(error.status).json({ error: error.message, code: error.code, status: error.status });
+            } else {
+                res.status(HttpStatusCode.INTERNAL_SERVER).json({
+                    error: error instanceof Error ? error.message : 'An unexpected error occurred',
+                    code: ErrorCode.UNKNOWN_ERROR,
+                    status: HttpStatusCode.INTERNAL_SERVER
+                })
+            }
+        }
+    }
+
+    async getFeedbackById(req: AuthenticatedRequest, res: Response) {
+        try {
+            if (!req.user) {
+                throw new AppError(
+                    ErrorCode.UNAUTHORIZED,
+                    'User not authenticated',
+                    HttpStatusCode.UNAUTHORIZED
+                )
+            }
+            const userId = req.user.id
+            const { id } = req.params as { id: string }
+            const data = await this._getFeedbackByIdService.execute(userId, id)
+            res.status(HttpStatusCode.OK).json(data)
+        } catch (error) {
+            if (error instanceof AppError) {
+                res.status(error.status).json({ error: error.message, code: error.code, status: error.status });
+            } else {
+                res.status(HttpStatusCode.INTERNAL_SERVER).json({
+                    error: error instanceof Error ? error.message : 'An unexpected error occurred',
+                    code: ErrorCode.UNKNOWN_ERROR,
+                    status: HttpStatusCode.INTERNAL_SERVER
+                })
+            }
+        }
+    }
+
+    async submitInterviewerRating(req: AuthenticatedRequest, res: Response) {
+        try {
+            if (!req.user) {
+                throw new AppError(
+                    ErrorCode.UNAUTHORIZED,
+                    'User not authenticated',
+                    HttpStatusCode.UNAUTHORIZED
+                )
+            }
+
+            const userId = req.user.id;
+            const body = req.body as SubmitInterviewerFeedbackDTO
+
+            if (!body?.bookingId || !body?.rating) {
+                throw new AppError(
+                    ErrorCode.VALIDATION_ERROR,
+                    'BookingId and rating are required',
+                    HttpStatusCode.BAD_REQUEST
+                );
+            }
+            const result = await this._submitInterviewerRatingService.execute(userId, body);
+
+            // Notify interviewer when user submits a rating
+            this._notificationPublisher.toInterviewer(result.interviewerId, NotifyEvents.RatingSubmitted, {
+                bookingId: result.bookingId,
+                interviewerId: result.interviewerId,
+                userId: result.userId,
+                rating: result.rating,
+                createdAt: result.createdAt,
+            })
+
+            res.status(HttpStatusCode.OK).json(result);
+        } catch (error) {
+            if (error instanceof AppError) {
+                res.status(error.status).json({
+                    error: error.message,
+                    code: error.code,
+                    status: error.status
+                });
+            } else {
+                res.status(HttpStatusCode.INTERNAL_SERVER).json({
+                    error: error instanceof Error ? error.message : 'An unexpected error occurred',
+                    code: ErrorCode.UNKNOWN_ERROR,
+                    status: HttpStatusCode.INTERNAL_SERVER,
+                });
+            }
+        }
+    }
+
+    async getInterviewerRatingByBookingId(req: AuthenticatedRequest, res: Response) {
+        try {
+            if (!req.user) {
+                throw new AppError(
+                    ErrorCode.UNAUTHORIZED,
+                    'User not authenticated',
+                    HttpStatusCode.UNAUTHORIZED
+                )
+            }
+            const userId = req.user.id
+            const { bookingId } = req.params as { bookingId: string }
+            const result = await this._getInterviewerRatingByBookingIdService.execute(userId, bookingId)
+            res.status(HttpStatusCode.OK).json(result)
+        } catch (error) {
+            if (error instanceof AppError) {
+                res.status(error.status).json({
+                    error: error.message,
+                    code: error.code,
+                    status: error.status
+                });
+            } else {
+                res.status(HttpStatusCode.INTERNAL_SERVER).json({
+                    error: error instanceof Error ? error.message : 'An unexpected error occurred',
+                    code: ErrorCode.UNKNOWN_ERROR,
+                    status: HttpStatusCode.INTERNAL_SERVER,
+                });
+            }
+        }
+    }
+
+    async getPaymentHistory(req: AuthenticatedRequest, res: Response) {
+        try {
+            if (!req.user) {
+                throw new AppError(
+                    ErrorCode.UNAUTHORIZED,
+                    "User not authenticated",
+                    HttpStatusCode.UNAUTHORIZED
+                );
+            }
+            const userId = req.user.id
+            const result = await this._getUserPaymentHistoryService.execute(userId)
+            res.status(HttpStatusCode.OK).json(result)
+        } catch (error) {
+            if (error instanceof AppError) {
+                res.status(error.status).json({
+                    error: error.message,
+                    code: error.code,
+                    status: error.status
+                });
+            } else {
+                res.status(HttpStatusCode.INTERNAL_SERVER).json({
+                    error: error instanceof Error ? error.message : "An unexpected error occurred",
+                    code: ErrorCode.UNKNOWN_ERROR,
+                    status: HttpStatusCode.INTERNAL_SERVER
+                });
+            }
+        }
+
+    }
+
+    async getDashboard(req: AuthenticatedRequest, res: Response) {
+        try {
+            if (!req.user) {
+                throw new AppError(
+                    ErrorCode.UNAUTHORIZED,
+                    "User not authenticated",
+                    HttpStatusCode.UNAUTHORIZED
+                );
+            }
+            const result = await this._getUserDashboardService.execute(req.user.id)
+            res.status(HttpStatusCode.OK).json(result)
+        } catch (error) {
+            if (error instanceof AppError) {
+                res.status(error.status).json({
+                    error: error.message,
+                    code: error.code,
+                    status: error.status
+                });
+            } else {
+                res.status(HttpStatusCode.INTERNAL_SERVER).json({
+                    error: error instanceof Error ? error.message : "An unexpected error occurred",
+                    code: ErrorCode.UNKNOWN_ERROR,
+                    status: HttpStatusCode.INTERNAL_SERVER
+                });
+            }
+        }
+    }
+
+    async deleteAccount(req: AuthenticatedRequest, res: Response) {
+        try {
+            if (!req.user) {
+                throw new AppError(
+                    ErrorCode.UNAUTHORIZED,
+                    "User not authenticated",
+                    HttpStatusCode.UNAUTHORIZED
+                );
+            }
+            const userId = req.user.id;
+            await this._deleteAccountService.execute(userId);
+            res.status(HttpStatusCode.OK).json({ message: "Account deleted successfully" });
+        } catch (error) {
+            if (error instanceof AppError) {
+                res.status(error.status).json({
+                    error: error.message,
+                    code: error.code,
+                    status: error.status,
+                });
+            } else {
+                res.status(HttpStatusCode.INTERNAL_SERVER).json({
+                    error: error instanceof Error ? error.message : "An unexpected error occurred",
+                    code: ErrorCode.UNKNOWN_ERROR,
+                    status: HttpStatusCode.INTERNAL_SERVER,
+                });
+            }
         }
     }
 

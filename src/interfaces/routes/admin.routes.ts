@@ -16,6 +16,11 @@ import { WalletRepository } from "../../infrastructure/database/repositories/wal
 import { GetWalletSummaryUseCase } from "../../application/use-cases/wallet/getWalletSummaryUseCase";
 import { ListWalletTransactionsUseCase } from "../../application/use-cases/wallet/listWalletTransactionsUseCase";
 import { AdminWalletController } from "../controllers/admin/wallet.controller";
+import { AdminDashboardController } from "../controllers/admin/dashboard.controller";
+import { GetAdminDashboardUseCase } from "../../application/use-cases/admin/getAdminDashboardUseCase";
+import { BookingRepository } from "../../infrastructure/database/repositories/bookingRepository";
+import { ListAdminSessionsUseCase } from "../../application/use-cases/admin/listAdminSessionsUseCase";
+import { AdminSessionController } from "../controllers/admin/session.controller";
 
 const router = express.Router();
 router.use(authenticateToken)
@@ -25,11 +30,13 @@ const userRepository = new UserRepository();
 const interviewerRepository=new InterviewerRepository();
 const emailService=new EmailService();
 const walletRepository = new WalletRepository();
+const bookingRepository = new BookingRepository()
 
 const getAllUsersUseCase = new GetAllUsersUseCase(userRepository);
 const blockUserUseCase = new BlockUserUseCase(userRepository);
 const unblockUserUseCase = new UnblockUserUseCase(userRepository);
 const adminUserController = new AdminUserController(getAllUsersUseCase, blockUserUseCase, unblockUserUseCase);
+
 
 const getPendingInterviewersUseCase = new GetPendingInterviewersUseCase(userRepository, interviewerRepository);
 const approveInterviewerUseCase = new ApproveInterviewerUseCase(userRepository,emailService);
@@ -38,13 +45,20 @@ const adminInterviewerController = new AdminInterviewerController(
   getPendingInterviewersUseCase,
   approveInterviewerUseCase,
   rejectInterviewerUseCase
-);
+)
+const adminDashboardUseCase = new GetAdminDashboardUseCase(userRepository,bookingRepository,interviewerRepository);
+
+const listAdminSessionsUseCase = new ListAdminSessionsUseCase(bookingRepository, userRepository);
+const adminSessionController = new AdminSessionController(listAdminSessionsUseCase);
 
 const getWalletSummaryUseCase = new GetWalletSummaryUseCase(walletRepository);
 const listWalletTransactionsUseCase = new ListWalletTransactionsUseCase(walletRepository);
 const adminWalletController = new AdminWalletController(getWalletSummaryUseCase, listWalletTransactionsUseCase);
+const adminDashboardController = new AdminDashboardController(adminDashboardUseCase);
 
 
+
+router.get('/dashboard', (req, res) => adminDashboardController.getDashboard(req, res));
 
 router.get('/users', (req, res) => adminUserController.getAllUsers(req, res));
 router.patch('/block/:id', (req, res) => adminUserController.blockUser(req, res));
@@ -56,5 +70,7 @@ router.patch('/interviewer/reject/:id',(req,res)=>adminInterviewerController.rej
 
 router.get('/wallet/summary', (req, res) => adminWalletController.getSummary(req, res));
 router.get('/wallet/transactions', (req, res) => adminWalletController.getTransactions(req, res));
+
+router.get('/sessions', (req, res) => adminSessionController.listSessions(req, res));
 
 export default router;

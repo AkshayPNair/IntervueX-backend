@@ -13,7 +13,7 @@ export class SignalingRepository implements ISignalingRepository {
         let room=this.rooms.get(roomId)
         if(!room){
             room={id:roomId, participants:[]}
-            this.rooms.set(roomId,room)
+            this.rooms.set(roomId,room)                  
         }
         if(!room.participants.includes(socketId) && room.participants.length<2){
             room.participants.push(socketId)

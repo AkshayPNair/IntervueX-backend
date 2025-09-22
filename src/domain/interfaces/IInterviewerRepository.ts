@@ -8,4 +8,5 @@ export interface IInterviewerRepository {
   updateInterviewer(userId: string, update: Partial<Interviewer>): Promise<void>;
   updateByUserId(userId:string,data:Partial<UpdateInterviewerProfileDTO>):Promise<Interviewer|null>;
   findInterviewerById(id:string):Promise<Interviewer|null>;
+  deleteByUserId(userId: string): Promise<void>;
 }

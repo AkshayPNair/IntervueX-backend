@@ -1,5 +1,5 @@
 import { Booking } from "../../domain/entities/Booking";
-import { BookingResponseDTO, CreateBookingDTO, InterviewerBookingResponseDTO } from "../../domain/dtos/booking.dto";
+import { BookingResponseDTO, CreateBookingDTO, InterviewerBookingResponseDTO, AdminBookingListDTO } from "../../domain/dtos/booking.dto";
 import { InterviewerProfileDTO } from "../../domain/dtos/interviewer.dto";
 import { UserProfileDTO } from "../../domain/dtos/user.dto";
 
@@ -68,3 +68,17 @@ export const toCreateBookingDTO = (data: CreateBookingDTO): CreateBookingDTO => 
         paymentId: data.paymentId
     }
 }
+
+export const toAdminBookingListDTO = (
+    booking: Booking,
+    userName: string,
+    interviewerName: string
+): AdminBookingListDTO => ({
+    id: booking.id,
+    userName,
+    interviewerName,
+    date: booking.date,
+    startTime: booking.startTime,
+    endTime: booking.endTime,
+    status: booking.status,
+});

@@ -19,6 +19,7 @@ export class SlotRuleRepository implements ISlotRuleRepository {
                     interviewerId: interviewerObjectId,
                     slotRules: data.slotRules,
                     blockedDates: data.blockedDates,
+                    excludedSlotsByDate: data.excludedSlotsByDate || {},
                     updatedAt: new Date()
                 },
                 {
@@ -38,6 +39,9 @@ export class SlotRuleRepository implements ISlotRuleRepository {
                 updatedDoc.interviewerId.toString(),
                 updatedDoc.slotRules,
                 updatedDoc.blockedDates,
+                updatedDoc.excludedSlotsByDate instanceof Map
+                 ? Object.fromEntries(updatedDoc.excludedSlotsByDate)
+                 : updatedDoc.excludedSlotsByDate || {},
                 updatedDoc.createdAt,
                 updatedDoc.updatedAt
             );
@@ -69,6 +73,9 @@ export class SlotRuleRepository implements ISlotRuleRepository {
                 slotRuleDoc.interviewerId.toString(),
                 slotRuleDoc.slotRules,
                 slotRuleDoc.blockedDates,
+                slotRuleDoc.excludedSlotsByDate instanceof Map
+                 ? Object.fromEntries(slotRuleDoc.excludedSlotsByDate)
+                 : slotRuleDoc.excludedSlotsByDate || {},
                 slotRuleDoc.createdAt,
                 slotRuleDoc.updatedAt
             );

@@ -8,6 +8,7 @@ import { signJwt } from "../../../infrastructure/external/services/jwtService";
 import { HttpStatusCode } from "../../../utils/HttpStatusCode";
 import { AppError } from "../../../application/error/AppError";
 import { ErrorCode } from "../../../application/error/ErrorCode";
+import { logger } from '../../../utils/logger';
 
 export class GoogleAuthUseCase implements IGoogleAuthService{
     constructor(
@@ -17,10 +18,10 @@ export class GoogleAuthUseCase implements IGoogleAuthService{
 
     async googleLogin(googleData:GoogleLoginDTO):Promise<GoogleAuthResponse>{
         try {
-            console.log('GoogleAuthUseCase: Starting Google login with data:', googleData);
+            logger.info('GoogleAuthUseCase: Starting Google login', { hasData: !!googleData });
 
             let existingUser=await this._userRepository.findUserByGoogleId(googleData.googleId)
-            console.log('GoogleAuthUseCase: Found existing user by Google ID:', !!existingUser);
+            logger.debug?.('GoogleAuthUseCase: Found existing user by Google ID', { exists: !!existingUser });
 
             if(!existingUser){
                 existingUser=await this._userRepository.findUserByEmail(googleData.email)
@@ -59,7 +60,7 @@ export class GoogleAuthUseCase implements IGoogleAuthService{
                 return toGoogleAuthResponse(createdUser,token,true,true)
             }
         } catch (error) {
-            console.error('GoogleAuthUseCase: Error during Google login:', error);
+            logger.error('GoogleAuthUseCase: Error during Google login', { error });
             throw new AppError(ErrorCode.INVALID_TOKEN,'Google Authentication failed',HttpStatusCode.UNAUTHORIZED)
         }
     }

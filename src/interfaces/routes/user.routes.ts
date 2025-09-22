@@ -19,14 +19,27 @@ import { SlotRuleRepository } from '../../infrastructure/database/repositories/s
 import { BookingRepository } from '../../infrastructure/database/repositories/bookingRepository';
 import { WalletRepository } from '../../infrastructure/database/repositories/walletRepository';
 import { CompleteBookingUseCase } from '../../application/use-cases/user/completeBookingUseCase';
+import { FeedbackRepository } from '../../infrastructure/database/repositories/feedbackRepository';
+import { ListUserFeedbacksUseCase } from '../../application/use-cases/user/listUserFeedbacksUseCase';
+import { GetUserFeedbackByIdUseCase } from '../../application/use-cases/user/getUserFeedbackByIdUseCase';
+import { SubmitInterviewerRatingUseCase } from '../../application/use-cases/user/submitInterviewerRatingUseCase';
+import { GetInterviewerRatingByBookingIdUseCase } from '../../application/use-cases/user/getInterviewerRatingByBookingIdUseCase';
+import { GetUserPaymentHistoryUseCase } from '../../application/use-cases/user/getUserPaymentHistoryUseCase';
+import { GetUserDashboardUseCase } from '../../application/use-cases/user/getUserDashboardUseCase';
+import { ChangePasswordUseCase } from '../../application/use-cases/auth/changePasswordUseCase';
+import { DeleteAccountUseCase } from '../../application/use-cases/auth/deleteAccountUseCase';
+import { InterviewerRepository } from '../../infrastructure/database/repositories/interviewerRepository';
+import { NotificationPublisher } from '../socket/notificationPublisher';
 
 const router = express.Router();
 router.use(authenticateToken,requireUser);
 
 const userRepository = new UserRepository();
+const interviewerRepository = new InterviewerRepository();
 const slotRuleRepository=new SlotRuleRepository();
 const bookingRepository = new BookingRepository();
-const walletRepository=new WalletRepository()
+const walletRepository=new WalletRepository();
+const feedbackRepository = new FeedbackRepository();
 
 const getUserProfileUseCase = new GetUserProfileUseCase(userRepository);
 const updateUserProfileUseCase = new UpdateUserProfileUseCase(userRepository);
@@ -40,6 +53,14 @@ const cancelBookingUseCase=new CancelBookingUseCase(bookingRepository,userReposi
 const getWalletSummaryUseCase=new GetWalletSummaryUseCase(walletRepository);
 const listWalletTransactionsUseCase=new ListWalletTransactionsUseCase(walletRepository)
 const completeBookingUseCase=new CompleteBookingUseCase(bookingRepository)
+const listUserFeedbacksUseCase = new ListUserFeedbacksUseCase(feedbackRepository);
+const getUserFeedbackByIdUseCase = new GetUserFeedbackByIdUseCase(feedbackRepository);
+const submitInterviewerRatingUseCase=new SubmitInterviewerRatingUseCase(feedbackRepository, bookingRepository)
+const getInterviewerRatingByBookingIdUseCase=new GetInterviewerRatingByBookingIdUseCase(feedbackRepository)
+const getUserPaymentHistoryUseCase = new GetUserPaymentHistoryUseCase(bookingRepository, userRepository)
+const getUserDashboardUseCase = new GetUserDashboardUseCase(bookingRepository, userRepository, feedbackRepository)
+const changePasswordUseCase = new ChangePasswordUseCase(userRepository)
+const deleteAccountUseCase = new DeleteAccountUseCase(userRepository, interviewerRepository)
 const userController = new UserController(
     getUserProfileUseCase, 
     updateUserProfileUseCase,
@@ -52,11 +73,23 @@ const userController = new UserController(
     cancelBookingUseCase,
     getWalletSummaryUseCase,
     listWalletTransactionsUseCase,
-    completeBookingUseCase
+    completeBookingUseCase,
+    listUserFeedbacksUseCase,
+    getUserFeedbackByIdUseCase,
+    submitInterviewerRatingUseCase,
+    getInterviewerRatingByBookingIdUseCase,
+    getUserPaymentHistoryUseCase,
+    getUserDashboardUseCase,
+    changePasswordUseCase,
+    deleteAccountUseCase,
+    NotificationPublisher
 );
 
 router.get('/profile', (req, res) => userController.getProfile(req, res));
 router.put('/profile', uploadFields, handleCombinedUploads, (req, res) => userController.updateProfile(req, res));
+router.put('/change-password', (req, res) => userController.changePassword(req, res));
+router.delete('/delete', (req,res)=> userController.deleteAccount(req,res))
+router.get('/dashboard', (req,res)=> userController.getDashboard(req,res))
 router.get('/interviewers',(req,res)=>userController.getAllInterviewers(req,res))
 router.get('/interviewers/:id',(req,res)=>userController.getInterviewerById(req,res))
 router.get('/book-session/:id',(req,res)=>userController.getAvailableSlots(req,res))
@@ -67,4 +100,9 @@ router.post('/bookings/cancel',(req,res)=>userController.cancelBooking(req,res))
 router.get('/wallet/summary',(req,res)=>userController.getWalletSummary(req,res))
 router.get('/wallet/transactions',(req,res)=>userController.getWalletTransactions(req,res))
 router.post('/bookings/complete',(req,res)=> userController.completeBooking(req,res))
+router.get('/feedback', (req, res) => userController.listFeedbacks(req, res))
+router.get('/feedback/:id', (req, res) => userController.getFeedbackById(req, res))
+router.post('/rating',(req,res)=>userController.submitInterviewerRating(req,res))
+router.get('/rating/:bookingId',(req,res)=>userController.getInterviewerRatingByBookingId(req,res))
+router.get('/payments/history',(req,res)=>userController.getPaymentHistory(req,res))
 export default router;

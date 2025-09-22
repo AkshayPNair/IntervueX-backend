@@ -81,3 +81,13 @@ export interface CancelBookingDTO{
 export interface CompleteBookingDTO{
     bookingId:string;
 }
+
+export interface AdminBookingListDTO{
+    id: string;
+    userName: string;
+    interviewerName: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    status: BookingStatus;
+}

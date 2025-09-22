@@ -14,6 +14,8 @@ export interface IBookingDocument extends Document{
     paymentMethod: PaymentMethod;
     paymentId?: string;
     cancellationReason?:string;
+    reminderEmail15Sent: boolean;
+    reminderEmail5Sent: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -85,6 +87,14 @@ const BookingSchema=new Schema<IBookingDocument>({
     },
     cancellationReason:{
         type:String
+    },
+    reminderEmail15Sent: {
+        type: Boolean,
+        default: false
+    },
+    reminderEmail5Sent: {
+        type: Boolean,
+        default: false    
     }
 },{
     timestamps:true,

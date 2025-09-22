@@ -2,7 +2,7 @@ import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 import { IEmailService } from '../../../domain/interfaces/IEmailService';
 dotenv.config({ path: 'src/config/.env' }); 
-
+import { logger } from '../../../utils/logger';
 
 export class EmailService implements IEmailService{
   private transporter;
@@ -43,9 +43,9 @@ export class EmailService implements IEmailService{
 
     try {
       await this.transporter.sendMail(mailOptions);
-      console.log(`OTP email sent to ${to}`);
+      logger.info(`OTP email sent to ${to}`);
     } catch (err) {
-      console.error('Error sending OTP email:', err);
+      logger.error('Error sending OTP email', { error: err });
       throw new Error('Failed to send OTP email');
     }
   }
@@ -107,9 +107,9 @@ export class EmailService implements IEmailService{
 
     try {
       await this.transporter.sendMail(mailOptions);
-      console.log(`Approval email sent to ${to}`);
+      logger.info(`Approval email sent to ${to}`);
     } catch (err) {
-      console.error('Error sending approval email:', err);
+      logger.error('Error sending approval email', { error: err });
       throw new Error('Failed to send approval email');
     }
   }
@@ -179,10 +179,43 @@ export class EmailService implements IEmailService{
 
     try {
       await this.transporter.sendMail(mailOptions);
-      console.log(`Rejection email sent to ${to}`);
+      logger.info(`Rejection email sent to ${to}`);
     } catch (err) {
-      console.error('Error sending rejection email:', err);
+      logger.error('Error sending rejection email', { error: err });
       throw new Error('Failed to send rejection email');
+    }
+  }
+
+  async sendSessionReminderEmail(params: {
+    to: string;
+    recipientName: string;
+    counterpartName: string;
+    date: string;
+    startTime: string;
+    minutesLeft: 5 | 15;
+    role: 'user' | 'interviewer';
+    joinUrl?: string;
+  }): Promise<void> {
+    const { to, recipientName, counterpartName, date, startTime, minutesLeft, role, joinUrl } = params;
+
+    const subject = `Reminder: Interview starts in ${minutesLeft} minutes`;
+    const htmlMessage = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 24px; border-radius: 12px; background:#fff;">
+        <h2 style="margin:0 0 12px;color:#111">Your interview starts in ${minutesLeft} minutes</h2>
+        <p style="margin:0 0 12px;color:#333">Hi ${recipientName},</p>
+        <p style="margin:0 0 12px;color:#333">This is a reminder that your session with ${counterpartName} starts at <b>${startTime}</b> on <b>${date}</b>.</p>
+        <p style="margin:16px 0 0;color:#555">Role: ${role}</p>
+        <p style="margin:8px 0 0;color:#777;font-size:12px">Please ensure your internet, microphone, and camera are working.</p>
+        <p style="margin:16px 0 0;color:#999;font-size:12px">– Team IntervueX</p>
+      </div>
+    `;
+
+    try {
+      await this.transporter.sendMail({ from: process.env.EMAIL_USERNAME, to, subject, html: htmlMessage });
+      logger.info(`Reminder (${minutesLeft}m) email sent to ${to}`);
+    } catch (err) {
+      logger.error('Error sending session reminder email', { error: err });
+      throw new Error('Failed to send session reminder email');
     }
   }
 }

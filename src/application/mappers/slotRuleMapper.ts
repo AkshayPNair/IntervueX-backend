@@ -7,6 +7,7 @@ export const toSlotRuleResponseDTO = (slotRule: SlotRule): SlotRuleResponseDTO =
         interviewerId: slotRule.interviewerId,
         slotRules: slotRule.slotRules,
         blockedDates: slotRule.blockedDates,
+        excludedSlotsByDate: slotRule.excludedSlotsByDate,
         createdAt: slotRule.createdAt,
         updatedAt: slotRule.updatedAt
     }
@@ -28,6 +29,7 @@ export const getDefaultSlotRuleResponseDTO = (interviewerId: string): SlotRuleRe
         interviewerId,
         slotRules:defaultSlotRules,
         blockedDates:[],
+        excludedSlotsByDate:{},
         createdAt:new Date(),
         updatedAt:new Date()
     }

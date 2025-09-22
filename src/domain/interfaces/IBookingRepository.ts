@@ -11,4 +11,5 @@ export interface IBookingRepository extends IBaseRepository<Document>{
     checkSlotAvailability(interviewerId:string,date:string,startTime:string,endTime:string):Promise<boolean>;
     cancelBooking(bookingId:string,reason:string):Promise<Booking|null>;
     completeBooking(bookingId:string):Promise<Booking|null>;
+    updateReminderFlags(bookingId: string, flags: { reminderEmail15Sent?: boolean; reminderEmail5Sent?: boolean }): Promise<void>;
 }

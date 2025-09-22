@@ -19,6 +19,8 @@ export interface IUserDocument extends Document {
   skills: string[];
   isGoogleUser:boolean;
   googleId?:string;
+  createdAt:Date;
+  updatedAt:Date;
 }
 
 const userSchema = new Schema<IUserDocument>(

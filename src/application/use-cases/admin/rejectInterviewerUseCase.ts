@@ -4,7 +4,7 @@ import { ErrorCode } from "../../../application/error/ErrorCode";
 import { HttpStatusCode } from "../../../utils/HttpStatusCode";
 import { IEmailService } from "../../../domain/interfaces/IEmailService";
 import { IRejectInterviewerService } from "../../../domain/interfaces/IRejectInterviewerService";
-
+import { logger } from '../../../utils/logger';
 
 export class RejectInterviewerUseCase implements IRejectInterviewerService {
   constructor(
@@ -40,7 +40,7 @@ export class RejectInterviewerUseCase implements IRejectInterviewerService {
       try {
         await this._emailService.sendRejectionEmail(user.email, user.name, finalRejectionReason);
       } catch (emailError) {
-        console.error('Failed to send rejection email:', emailError);
+        logger.error('Failed to send rejection email', { error: emailError });
       }
 
     } catch (error) {
