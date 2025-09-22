@@ -25,8 +25,7 @@ const FeedbackSchema = new Schema<IFeedbackDocument>({
     interviewerId: {
         type: Schema.Types.ObjectId,
         ref: 'Interviewer',
-        required: true,
-        index: true
+        required: true,     
     },
     userId: {
         type: Schema.Types.ObjectId,

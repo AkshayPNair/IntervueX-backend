@@ -4,6 +4,7 @@ import { AppError } from "../../../application/error/AppError";
 import { ErrorCode } from "../../../application/error/ErrorCode";
 import { HttpStatusCode } from "../../../utils/HttpStatusCode";
 import { ICreateRazorpayOrderService } from "../../../domain/interfaces/ICreateRazorpayOrderService";
+import { logger } from '../../../utils/logger';
 
 export class CreateRazorpayOrderUseCase implements ICreateRazorpayOrderService{
     async execute(data: RazorpayOrderDTO): Promise<RazorpayOrderResponseDTO> {
@@ -23,7 +24,7 @@ export class CreateRazorpayOrderUseCase implements ICreateRazorpayOrderService{
                 receipt: order.receipt || ''
             }
         } catch (error: any) {
-            console.error("Razorpay order creation error:", error);
+            logger.error('Razorpay order creation error', { error });
             throw new AppError(
                 ErrorCode.PAYMENT_ERROR,
                 error.message || "Failed to create Razorpay order",

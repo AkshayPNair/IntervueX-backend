@@ -31,6 +31,7 @@ export interface IUserRepository{
     findUserById(userId: string): Promise<User|null>;
     findPendingInterviewers(): Promise<User[]>;
     updateUser(userId: string, update: Partial<User>): Promise<void>;
+    deleteUserById(userId: string): Promise<void>;
     updateUserProfile(userId:string,profileData:{name?:string; profilePicture?:string; resume?:string; skills?:string[]}):Promise<User|null>;
     findApprovedInterviewersWithProfiles():Promise<UserWithInterviewerProfile[]>;
     findApprovedInterviewerById(interviewerId: string): Promise<UserWithInterviewerProfile | null>;

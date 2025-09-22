@@ -1,4 +1,5 @@
-import { Request, Response } from 'express';
+import {  Response } from 'express';
+import { AuthenticatedRequest } from "../../middleware/authMiddleware";
 import { IGetPendingInterviewersService } from '../../../domain/interfaces/IGetPendingInterviewersService';
 import { IApproveInterviewerService } from '../../../domain/interfaces/IApproveInterviewerService';
 import { IRejectInterviewerService } from '../../../domain/interfaces/IRejectInterviewerService';
@@ -12,7 +13,7 @@ export class AdminInterviewerController {
         private _rejectInterviewerService: IRejectInterviewerService
     ) { }
 
-    async getPendingInterviewers(req: Request, res: Response): Promise<void> {
+    async getPendingInterviewers(req: AuthenticatedRequest, res: Response): Promise<void> {
         try {
             const result = await this._getPendingInterviewersService.execute()
             res.status(HttpStatusCode.OK).json(result)
@@ -33,7 +34,7 @@ export class AdminInterviewerController {
         }
     }
 
-    async approveInterviewer(req: Request, res: Response): Promise<void> {
+    async approveInterviewer(req: AuthenticatedRequest, res: Response): Promise<void> {
         try {
             const { id } = req.params;
             const result = await this._approveInterviewerService.execute(id)
@@ -55,7 +56,7 @@ export class AdminInterviewerController {
         }
     }
 
-    async rejectInterviewer(req: Request, res: Response): Promise<void> {
+    async rejectInterviewer(req: AuthenticatedRequest, res: Response): Promise<void> {
         try {
             const { id } = req.params;
             const {rejectedReason}=req.body;

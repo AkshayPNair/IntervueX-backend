@@ -4,6 +4,7 @@ import { ErrorCode } from "../../../application/error/ErrorCode";
 import { HttpStatusCode } from "../../../utils/HttpStatusCode";
 import { IEmailService } from "../../../domain/interfaces/IEmailService";
 import { IApproveInterviewerService } from "../../../domain/interfaces/IApproveInterviewerService";
+import { logger } from "../../../utils/logger";
 
 export class ApproveInterviewerUseCase implements IApproveInterviewerService{
     constructor(
@@ -32,7 +33,7 @@ export class ApproveInterviewerUseCase implements IApproveInterviewerService{
       try {
         await this._emailService.sendApprovalEmail(user.email, user.name);
       } catch (emailError) {
-        console.error('Failed to send approval email:', emailError);
+        logger.error('Failed to send approval email:', emailError);
       }
 
         } catch (error) {

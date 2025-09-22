@@ -11,7 +11,9 @@ import { IResetPasswordService } from '../../../domain/interfaces/IResetPassword
 import { IGoogleAuthService } from '../../../domain/interfaces/IGoogleAuthService';
 import { HttpStatusCode } from '../../../utils/HttpStatusCode';
 import { GoogleLoginDTO,RoleSelectionDTO } from '../../../domain/dtos/googleAuth.dto';
-import { error } from 'console';
+import { INotificationPublisher } from '../../../domain/interfaces/INotificationPublisher';
+import { NotifyEvents } from '../../socket/notificationPublisher';
+import { logger } from '../../../utils/logger';
 
 export class AuthController{
   constructor (
@@ -21,13 +23,23 @@ export class AuthController{
     private _resendOtpService:IResendOtpService,
     private _forgetPasswordService:IForgetPasswordService,
     private _resetPasswordService:IResetPasswordService,
-    private _googleAuthService:IGoogleAuthService
+    private _googleAuthService:IGoogleAuthService,
+    private _notificationPublisher:INotificationPublisher
   ){}
 
   async signupUser(req:Request, res: Response){
     try {
       const {userDto,interviewerDto}=req.body;
       await this._signupService.execute(userDto,interviewerDto)
+
+      // Notify admins about a new registration
+      this._notificationPublisher.toAdmin(NotifyEvents.NewRegistration, {
+        role: userDto.role,
+        email: userDto.email,
+        name: userDto.name,
+        timestamp: new Date().toISOString(),
+      })
+
       res.status(HttpStatusCode.CREATED).json({message:"User created successfully"})
     } catch (error) {
       if(error instanceof AppError){
@@ -91,7 +103,7 @@ export class AuthController{
 
   async forgetPassword(req:Request, res:Response){
     try {
-      console.log("BODY RECEIVED:", req.body); 
+      logger.info("BODY RECEIVED:", req.body); 
       const {email} = req.body;
       await this._forgetPasswordService.execute({email});
       res.status(HttpStatusCode.OK).json({message:"OTP sent to your email successfully"});
@@ -269,13 +281,13 @@ export class AuthController{
 
   async googleLogin(req:Request,res:Response):Promise<void>{
     try {
-      console.log('Google login request body:', req.body);
+      logger.info('Google login request body:', req.body);
       const googleData: GoogleLoginDTO = req.body;
 
       // Validate required fields
       if (!googleData.email || !googleData.name || !googleData.googleId) {
 
-        console.log('Validation failed:', { 
+        logger.warn('Google login validation failed', { 
           email: !!googleData.email, 
           name: !!googleData.name, 
           googleId: !!googleData.googleId 
@@ -354,18 +366,18 @@ export class AuthController{
 
   async selectRole(req: Request, res: Response): Promise<void> {
     try {
-      console.log('=== SELECT ROLE DEBUG ===');
-      console.log('Request cookies:', req.cookies);
-      console.log('Request user:', (req as any).user);
+      logger.debug?.('=== SELECT ROLE DEBUG ===');
+      logger.debug?.('Request cookies:', req.cookies);
+      logger.debug?.('Request user:', (req as any).user);
 
      const roleData: RoleSelectionDTO = req.body;
       const userId = (req as any).user?.id; // Assuming you have auth middleware that sets req.user
 
-      console.log('Extracted userId:', userId);
-      console.log('Role data:', roleData);
+      logger.debug?.('Extracted userId:', userId);
+      logger.debug?.('Role data:', roleData);
 
       if (!userId) {
-        console.log('No userId found - returning 401');
+        logger.warn('No userId found - returning 401');
         res.status(HttpStatusCode.UNAUTHORIZED).json({
           error: 'User not authenticated',
           code: ErrorCode.UNAUTHORIZED,

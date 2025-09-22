@@ -25,6 +25,8 @@ export class Booking {
         public paymentMethod: PaymentMethod,
         public paymentId?: string,
         public cancelReason?: string,
+        public reminderEmail15Sent: boolean = false,
+        public reminderEmail5Sent: boolean = false,
         public createdAt: Date = new Date(),
         public updatedAt: Date = new Date()
     ) { }

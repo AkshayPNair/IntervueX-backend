@@ -91,7 +91,7 @@ const SlotRuleSchema = new Schema<ISlotRuleDocument>({
         validate: {
             validator: function(map: Map<string, { startTime: string; endTime: string }[]>) {
                 const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-                for (const [date, slots] of (map as any).entries()) {
+                for (const [date, slots] of map.entries()) {
                     if (!dateRegex.test(date)) return false;
                     if (!Array.isArray(slots)) return false;
                 }
@@ -105,7 +105,6 @@ const SlotRuleSchema = new Schema<ISlotRuleDocument>({
     collection: 'interviewer_slot_rules'
 });
 
-SlotRuleSchema.index({ interviewerId: 1 });
 SlotRuleSchema.index({ 'slotRules.enabled': 1 });
 SlotRuleSchema.index({ blockedDates: 1 });
 

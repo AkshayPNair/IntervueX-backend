@@ -6,9 +6,13 @@ import http from 'http'
 import { Server } from 'socket.io'
 import { registerSignaling } from './interfaces/socket/signaling.socket'
 import { registerChat } from './interfaces/socket/chat.socket'
+import { registerNotifications } from './interfaces/socket/notification.socket'
+import { bootstrapSchedulers } from './infrastructure/scheduler/scheduler.bootstarp';
+import { logger } from './utils/logger';
 
 dotenv.config({ path: path.resolve(__dirname, './config/.env') });
 
+let schedulerInstance = null
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || '';
 
@@ -25,17 +29,19 @@ const io = new Server(server, {
 
 registerSignaling(io)
 registerChat(io)
+registerNotifications(io)
 
 mongoose
   .connect(MONGO_URI)
   .then(() => {
-    console.log('Connected to MongoDB');
+    logger.info('Connected to MongoDB');
+    schedulerInstance = bootstrapSchedulers()
     server.listen(PORT, () => {
-      console.log(` Server running on http://localhost:${PORT}`);
+      logger.info(`Server running on http://localhost:${PORT}`);
     });
   })
   .catch((error) => {
-    console.error(' Failed to connect to MongoDB:', error);
+    logger.error('Failed to connect to MongoDB', { error });
   });
 
 

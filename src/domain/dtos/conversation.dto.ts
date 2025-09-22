@@ -2,6 +2,8 @@ export interface ConversationDTO {
     id: string;
     userId: string;
     interviewerId: string;
+    userName?:string;
+    interviewerName?:string;
     lastMessage: string;
     unreadForUser: number;
     unreadForInterviewer: number;

@@ -8,6 +8,7 @@ import adminRoutes from './interfaces/routes/admin.routes'
 import interviewerRoutes from './interfaces/routes/interviewer.routes'
 import userRoutes from './interfaces/routes/user.routes'
 import chatRoutes from './interfaces/routes/chat.routes'
+import compilerRoutes from './interfaces/routes/compiler.routes'
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/interviewer', interviewerRoutes);
 app.use('/api/user',userRoutes)
 app.use('/api/chat', chatRoutes)
+app.use('/api/compiler', compilerRoutes)
 
 // Test endpoint
 app.get('/', (_req, res) => {

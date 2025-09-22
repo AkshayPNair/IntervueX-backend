@@ -22,7 +22,10 @@ import { SubmitFeedbackUseCase } from '../../application/use-cases/interviewer/s
 import { ListInterviewerFeedbacksUseCase } from '../../application/use-cases/interviewer/listInterviewerFeedbacksUseCase';
 import { GetInterviewerFeedbackByIdUseCase } from '../../application/use-cases/interviewer/getInterviewerFeedbackByIdUseCase';
 import { GetUserRatingByBookingIdUseCase } from '../../application/use-cases/interviewer/getUserRatingByBookingIdUseCase';
-
+import { GetInterviewerDashboardUseCase } from '../../application/use-cases/interviewer/getInterviewerDashboardUseCase';
+import { ChangePasswordUseCase } from '../../application/use-cases/auth/changePasswordUseCase';
+import { DeleteAccountUseCase } from '../../application/use-cases/auth/deleteAccountUseCase'; 
+import { NotificationPublisher } from '../socket/notificationPublisher';
 
 const router= express.Router()
 router.use(authenticateToken,requireInterviewer)
@@ -47,6 +50,9 @@ const submitFeedbackUseCase = new SubmitFeedbackUseCase(feedbackRepository, book
 const listInterviewerFeedbacksUseCase = new ListInterviewerFeedbacksUseCase(feedbackRepository)
 const getInterviewerFeedbackByIdUseCase = new GetInterviewerFeedbackByIdUseCase(feedbackRepository)
 const getUserRatingByBookingIdUseCase=new GetUserRatingByBookingIdUseCase(feedbackRepository)
+const getInterviewerDashboardUseCase = new GetInterviewerDashboardUseCase(bookingRepository, userRepository, feedbackRepository)
+const changePasswordUseCase = new ChangePasswordUseCase(userRepository)
+const deleteAccountUseCase = new DeleteAccountUseCase(userRepository, interviewerRespository)
 
 const interviewerController=new InterviewerController(
     submitVerificationUseCase,
@@ -61,15 +67,24 @@ const interviewerController=new InterviewerController(
     submitFeedbackUseCase,
     listInterviewerFeedbacksUseCase,
     getInterviewerFeedbackByIdUseCase,
-    getUserRatingByBookingIdUseCase
+    getUserRatingByBookingIdUseCase,
+    getInterviewerDashboardUseCase,
+    changePasswordUseCase,
+    deleteAccountUseCase,
+    NotificationPublisher
 )
 
 
 router.post('/submit-verification',uploadFields,handleCombinedUploads,(req,res)=>interviewerController.submitVerification(req,res))
 router.get('/verification-status',(req,res)=>interviewerController.getVerificationStatus(req,res))
 
+router.put('/change-password',(req,res)=>interviewerController.changePassword(req,res))
+router.delete('/delete',(req,res)=>interviewerController.deleteAccount(req,res))
+
 router.get('/profile',(req,res)=>interviewerController.getProfile(req,res))
 router.put('/profile',uploadFields,handleCombinedUploads,(req,res)=>interviewerController.updateProfile(req,res))
+
+router.get('/dashboard', (req, res) => interviewerController.getDashboard(req, res))
 
 router.post('/slot-rules',(req,res)=>interviewerController.saveSlotRule(req,res))
 router.get('/slot-rules',(req,res)=>interviewerController.getSlotRule(req,res))

@@ -24,11 +24,18 @@ import { ListUserFeedbacksUseCase } from '../../application/use-cases/user/listU
 import { GetUserFeedbackByIdUseCase } from '../../application/use-cases/user/getUserFeedbackByIdUseCase';
 import { SubmitInterviewerRatingUseCase } from '../../application/use-cases/user/submitInterviewerRatingUseCase';
 import { GetInterviewerRatingByBookingIdUseCase } from '../../application/use-cases/user/getInterviewerRatingByBookingIdUseCase';
+import { GetUserPaymentHistoryUseCase } from '../../application/use-cases/user/getUserPaymentHistoryUseCase';
+import { GetUserDashboardUseCase } from '../../application/use-cases/user/getUserDashboardUseCase';
+import { ChangePasswordUseCase } from '../../application/use-cases/auth/changePasswordUseCase';
+import { DeleteAccountUseCase } from '../../application/use-cases/auth/deleteAccountUseCase';
+import { InterviewerRepository } from '../../infrastructure/database/repositories/interviewerRepository';
+import { NotificationPublisher } from '../socket/notificationPublisher';
 
 const router = express.Router();
 router.use(authenticateToken,requireUser);
 
 const userRepository = new UserRepository();
+const interviewerRepository = new InterviewerRepository();
 const slotRuleRepository=new SlotRuleRepository();
 const bookingRepository = new BookingRepository();
 const walletRepository=new WalletRepository();
@@ -50,6 +57,10 @@ const listUserFeedbacksUseCase = new ListUserFeedbacksUseCase(feedbackRepository
 const getUserFeedbackByIdUseCase = new GetUserFeedbackByIdUseCase(feedbackRepository);
 const submitInterviewerRatingUseCase=new SubmitInterviewerRatingUseCase(feedbackRepository, bookingRepository)
 const getInterviewerRatingByBookingIdUseCase=new GetInterviewerRatingByBookingIdUseCase(feedbackRepository)
+const getUserPaymentHistoryUseCase = new GetUserPaymentHistoryUseCase(bookingRepository, userRepository)
+const getUserDashboardUseCase = new GetUserDashboardUseCase(bookingRepository, userRepository, feedbackRepository)
+const changePasswordUseCase = new ChangePasswordUseCase(userRepository)
+const deleteAccountUseCase = new DeleteAccountUseCase(userRepository, interviewerRepository)
 const userController = new UserController(
     getUserProfileUseCase, 
     updateUserProfileUseCase,
@@ -66,11 +77,19 @@ const userController = new UserController(
     listUserFeedbacksUseCase,
     getUserFeedbackByIdUseCase,
     submitInterviewerRatingUseCase,
-    getInterviewerRatingByBookingIdUseCase
+    getInterviewerRatingByBookingIdUseCase,
+    getUserPaymentHistoryUseCase,
+    getUserDashboardUseCase,
+    changePasswordUseCase,
+    deleteAccountUseCase,
+    NotificationPublisher
 );
 
 router.get('/profile', (req, res) => userController.getProfile(req, res));
 router.put('/profile', uploadFields, handleCombinedUploads, (req, res) => userController.updateProfile(req, res));
+router.put('/change-password', (req, res) => userController.changePassword(req, res));
+router.delete('/delete', (req,res)=> userController.deleteAccount(req,res))
+router.get('/dashboard', (req,res)=> userController.getDashboard(req,res))
 router.get('/interviewers',(req,res)=>userController.getAllInterviewers(req,res))
 router.get('/interviewers/:id',(req,res)=>userController.getInterviewerById(req,res))
 router.get('/book-session/:id',(req,res)=>userController.getAvailableSlots(req,res))
@@ -85,4 +104,5 @@ router.get('/feedback', (req, res) => userController.listFeedbacks(req, res))
 router.get('/feedback/:id', (req, res) => userController.getFeedbackById(req, res))
 router.post('/rating',(req,res)=>userController.submitInterviewerRating(req,res))
 router.get('/rating/:bookingId',(req,res)=>userController.getInterviewerRatingByBookingId(req,res))
+router.get('/payments/history',(req,res)=>userController.getPaymentHistory(req,res))
 export default router;

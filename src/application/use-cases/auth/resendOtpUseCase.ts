@@ -4,6 +4,7 @@ import { IEmailService } from "../../../domain/interfaces/IEmailService";
 import { AppError } from "../../error/AppError";
 import { ErrorCode } from "../../error/ErrorCode";
 import {HttpStatusCode} from '../../../utils/HttpStatusCode'
+import { logger } from '../../../utils/logger';
 
 export class ResendOtpUseCase implements IResendOtpService {
   constructor(
@@ -12,7 +13,7 @@ export class ResendOtpUseCase implements IResendOtpService {
   ) { }
 
   async execute(email: string): Promise<void> {
-    console.log("ResendOtpUseCase received email:", email);
+    logger.info('ResendOtpUseCase received email', { email });
     const user = await this._userRepository.findUserByEmail(email);
     if (!user) {
       throw new AppError(ErrorCode.INVALID_CREDENTIALS, "User not found", HttpStatusCode.NOT_FOUND);
@@ -28,6 +29,6 @@ export class ResendOtpUseCase implements IResendOtpService {
     await this._userRepository.updateOtp(email, otp, otpExpiry);
     await this._emailService.sendEmail(email, `Your OTP: ${otp}`);
 
-    console.log(`Resend OTP : ${otp}`)
+    logger.info('Resend OTP generated', { otp });
   }
 }

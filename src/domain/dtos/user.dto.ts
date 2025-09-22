@@ -87,3 +87,7 @@ export interface InterviewerProfileDTO{
     hourlyRate?: number;
 }
 
+export interface ChangePasswordDTO {
+    currentPassword: string;
+    newPassword: string;
+}

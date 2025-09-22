@@ -20,6 +20,12 @@ import { IListInterviewerFeedbacksService } from '../../../domain/interfaces/ILi
 import { IGetInterviewerFeedbackByIdService } from '../../../domain/interfaces/IGetInterviewerFeedbackByIdService';
 import { SubmitFeedbackDTO } from '../../../domain/dtos/feedback.dto';
 import { IGetUserRatingByBookingIdService } from '@/domain/interfaces/IGetUserRatingByBookingIdService';
+import { IGetInterviewerDashboardService } from '../../../domain/interfaces/IGetInterviewerDashboardService';
+import { IChangePasswordService } from '../../../domain/interfaces/IChangePasswordService';
+import { ChangePasswordDTO } from '../../../domain/dtos/user.dto';
+import { IDeleteAccountService } from '../../../domain/interfaces/IDeleteAccountService';
+import { INotificationPublisher } from '../../../domain/interfaces/INotificationPublisher';
+import { NotifyEvents } from '../../socket/notificationPublisher';
 
 export class InterviewerController{
     constructor(
@@ -35,7 +41,11 @@ export class InterviewerController{
         private _submitFeedbackService: ISubmitFeedbackService,
         private _listFeedbacksService: IListInterviewerFeedbacksService,
         private _getFeedbackByIdService: IGetInterviewerFeedbackByIdService,
-        private _getUserRatingByBookingIdService:IGetUserRatingByBookingIdService
+        private _getUserRatingByBookingIdService:IGetUserRatingByBookingIdService,
+        private _getInterviewerDashboardService: IGetInterviewerDashboardService,
+        private _changePasswordService: IChangePasswordService,
+        private _deleteAccountService: IDeleteAccountService,
+        private _notificationPublisher:INotificationPublisher
     ){}
 
     async submitVerification(req:AuthenticatedRequest,res:Response){
@@ -182,6 +192,47 @@ export class InterviewerController{
                     code: ErrorCode.UNKNOWN_ERROR,
                     status: HttpStatusCode.INTERNAL_SERVER
                 });
+            }
+        }
+    }
+
+    async changePassword(req:AuthenticatedRequest,res:Response){
+        try {
+            if(!req.user){
+                throw new AppError(
+                    ErrorCode.UNAUTHORIZED,
+                    'User not authenticated',
+                    HttpStatusCode.UNAUTHORIZED
+                )
+            }
+            const userId=req.user.id
+            const body=req.body as Partial<ChangePasswordDTO>
+            if(!body.currentPassword || !body.newPassword){
+                throw new AppError(
+                    ErrorCode.VALIDATION_ERROR,
+                    'currentPassword and newPassword are required',
+                    HttpStatusCode.BAD_REQUEST
+                )
+            }
+            const dto:ChangePasswordDTO={
+                currentPassword: body.currentPassword,
+                newPassword: body.newPassword
+            }
+            await this._changePasswordService.execute(userId,dto)
+            res.status(HttpStatusCode.OK).json({message:'Password changed successfully'})
+        } catch (error) {
+            if(error instanceof AppError){
+                res.status(error.status).json({
+                    error:error.message,
+                    code:error.code,
+                    status:error.status
+                })
+            }else{
+                res.status(HttpStatusCode.INTERNAL_SERVER).json({
+                    error:error instanceof Error ? error.message : "An unexpected error occurred",
+                    code: ErrorCode.UNKNOWN_ERROR,
+                    status:HttpStatusCode.INTERNAL_SERVER
+                })
             }
         }
     }
@@ -353,6 +404,20 @@ export class InterviewerController{
                 )
             }
             const result=await this._submitFeedbackService.execute(interviewerId, interviewerId,payload)
+            
+            this._notificationPublisher?.toUser(result.userId, NotifyEvents.FeedbackSubmitted, {
+                bookingId: result.bookingId,
+                interviewerId: result.interviewerId,
+                userId: result.userId,
+                createdAt: result.createdAt,
+            })
+
+            this._notificationPublisher?.toInterviewer(interviewerId, NotifyEvents.FeedbackSubmitted, {
+                bookingId: result.bookingId,
+                userId: result.userId,
+                createdAt: result.createdAt,
+            })
+
             res.status(HttpStatusCode.OK).json(result)
         } catch (error) {
             if (error instanceof AppError) {
@@ -438,6 +503,64 @@ export class InterviewerController{
         } catch (error) {
             if (error instanceof AppError) {
                 res.status(error.status).json({ error: error.message, code: error.code, status: error.status });
+            } else {
+                res.status(HttpStatusCode.INTERNAL_SERVER).json({
+                    error: error instanceof Error ? error.message : 'An unexpected error occurred',
+                    code: ErrorCode.UNKNOWN_ERROR,
+                    status: HttpStatusCode.INTERNAL_SERVER
+                })
+            }
+        }
+    }
+
+    async getDashboard(req: AuthenticatedRequest, res: Response) {
+        try {
+            if (!req.user) {
+                throw new AppError(
+                    ErrorCode.UNAUTHORIZED,
+                    "User not authenticated",
+                    HttpStatusCode.UNAUTHORIZED
+                )
+            }
+            const interviewerId = req.user.id
+            const data = await this._getInterviewerDashboardService.execute(interviewerId)
+            res.status(HttpStatusCode.OK).json(data)
+        } catch (error) {
+            if (error instanceof AppError) {
+                res.status(error.status).json({
+                    error: error.message,
+                    code: error.code,
+                    status: error.status
+                })
+            } else {
+                res.status(HttpStatusCode.INTERNAL_SERVER).json({
+                    error: error instanceof Error ? error.message : "An unexpected error occurred",
+                    code: ErrorCode.UNKNOWN_ERROR,
+                    status: HttpStatusCode.INTERNAL_SERVER
+                })
+            }
+        }
+    }
+
+    async deleteAccount(req: AuthenticatedRequest, res: Response) {
+        try {
+            if (!req.user) {
+                throw new AppError(
+                    ErrorCode.UNAUTHORIZED,
+                    'User not authenticated',
+                    HttpStatusCode.UNAUTHORIZED
+                )
+            }
+            const userId = req.user.id
+            await this._deleteAccountService.execute(userId)
+            res.status(HttpStatusCode.OK).json({ message: 'Account deleted successfully' })
+        } catch (error) {
+            if (error instanceof AppError) {
+                res.status(error.status).json({
+                    error: error.message,
+                    code: error.code,
+                    status: error.status
+                })
             } else {
                 res.status(HttpStatusCode.INTERNAL_SERVER).json({
                     error: error instanceof Error ? error.message : 'An unexpected error occurred',

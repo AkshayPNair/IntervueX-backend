@@ -11,6 +11,7 @@ import {EmailService} from '../../infrastructure/external/services/emailService'
 import { ForgetPasswordUseCase } from '../../application/use-cases/auth/forgetPasswordUseCase';
 import { ResetPasswordUseCase } from '../../application/use-cases/auth/resetPasswordUseCase';
 import { GoogleAuthUseCase } from '../../application/use-cases/auth/googleAuthUseCase';
+import { NotificationPublisher } from '../socket/notificationPublisher';
 
 const router=express.Router();
 const emailService = new EmailService();
@@ -25,7 +26,7 @@ const resendOtpUseCase=new ResendOtpUseCase(userRepository,emailService)
 const forgetPasswordUseCase=new ForgetPasswordUseCase(userRepository,emailService)
 const resetPasswordUseCase=new ResetPasswordUseCase(userRepository)
 const googleAuthUseCase=new GoogleAuthUseCase(userRepository,interviewerRepository)
-const authController=new AuthController(signupUserUseCase, verifyOtpUseCase,loginUseCase,resendOtpUseCase,forgetPasswordUseCase,resetPasswordUseCase,googleAuthUseCase)
+const authController=new AuthController(signupUserUseCase, verifyOtpUseCase,loginUseCase,resendOtpUseCase,forgetPasswordUseCase,resetPasswordUseCase,googleAuthUseCase,NotificationPublisher)
 
 router.post('/refresh',(req,res)=>authController.refreshToken(req,res))
 router.post('/signup',(req,res)=> authController.signupUser(req,res))

@@ -1,9 +1,21 @@
 import { InterviewerModel , IInterviewerDocument } from '../models/InterviewerModel';
 import { Interviewer } from '../../../domain/entities/Interviewer';
-import { toInterviewerPersistence, toInterviewerDomain } from '../../../application/mappers/interviewerMapper';
 import { IInterviewerRepository } from '../../../domain/interfaces/IInterviewerRepository';
 import { BaseRepository } from './baseRepository';
 import { SignupInterviewerDTO } from '../../../domain/dtos/interviewer.dto';
+
+function mapDocToInterviewer(doc: IInterviewerDocument): Interviewer {
+  return new Interviewer(
+    doc.userId.toString(),
+    doc.profilePic,
+    doc.jobTitle,
+    doc.yearsOfExperience,
+    doc.professionalBio,
+    doc.technicalSkills,
+    doc.resume,
+    doc.hourlyRate
+  )
+}
 
 export class InterviewerRepository extends BaseRepository<IInterviewerDocument> implements IInterviewerRepository {
   constructor(){
@@ -11,23 +23,32 @@ export class InterviewerRepository extends BaseRepository<IInterviewerDocument> 
   }
 
   async createInterviewer(interviewer: Interviewer): Promise<Interviewer> {
-    await InterviewerModel.create(toInterviewerPersistence(interviewer));
+    await InterviewerModel.create({
+      userId: interviewer.userId,
+      profilePic: interviewer.profilePic,
+      jobTitle: interviewer.jobTitle,
+      yearsOfExperience: interviewer.yearsOfExperience,
+      professionalBio: interviewer.professionalBio,
+      technicalSkills: interviewer.technicalSkills,
+      resume: interviewer.resume,
+      hourlyRate: interviewer.hourlyRate,
+    });
     return interviewer;
   }
 
   async createInterviewerProfile(interviewer: {userId:string} & SignupInterviewerDTO): Promise<Interviewer>{
     const result=await InterviewerModel.create(interviewer)
-    return toInterviewerDomain(result,result.userId.toString())
+    return mapDocToInterviewer(result)
   }
 
   async findInterviewerById(id: string): Promise<Interviewer | null> {
     const result=await this.model.findById(id)
-    return result ? toInterviewerDomain(result,result.userId.toString()):null
+    return result ? mapDocToInterviewer(result):null
   }
 
   async findByUserId(userId: string): Promise<Interviewer | null> {
     const result = await this.model.findOne({ userId });
-    return result ? toInterviewerDomain(result, result.userId.toString()) : null;
+    return result ? mapDocToInterviewer(result) : null;
   }
 
   async updateInterviewer(userId: string, update: Partial<Interviewer>): Promise<void> {
@@ -40,7 +61,11 @@ export class InterviewerRepository extends BaseRepository<IInterviewerDocument> 
       {$set:data},
       {new:true}
     )
-    return result ? toInterviewerDomain(result,result.userId.toString()):null
+    return result ? mapDocToInterviewer(result):null
+  }
+
+  async deleteByUserId(userId: string): Promise<void> {
+    await this.model.deleteOne({ userId }).exec();
   }
 
 }

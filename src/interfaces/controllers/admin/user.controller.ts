@@ -1,4 +1,5 @@
-import { Request, Response } from "express";
+import { Response } from "express";
+import { AuthenticatedRequest } from "../../middleware/authMiddleware";
 import { IGetAllUsersService } from "../../../domain/interfaces/IGetAllUsersService";
 import { IBlockUserService } from "../../../domain/interfaces/IBlockUserService";
 import { IUnblockUserService } from "../../../domain/interfaces/IUnblockUserService";
@@ -11,7 +12,7 @@ export class AdminUserController {
         private _unblockUserService: IUnblockUserService
     ) { }
 
-    async getAllUsers(req: Request, res: Response) {
+    async getAllUsers(req:AuthenticatedRequest, res: Response) {
         try {
             const users = await this._getAllUsersService.execute();
             res.status(HttpStatusCode.OK).json({ users });
@@ -22,7 +23,7 @@ export class AdminUserController {
         }
     }
 
-    async blockUser(req: Request, res: Response) {
+    async blockUser(req: AuthenticatedRequest, res: Response) {
         try {
             await this._blockUserService.execute(req.params.id);
             res.status(HttpStatusCode.OK).json({ message: "User blocked successfully" });
@@ -33,7 +34,7 @@ export class AdminUserController {
         }
     }
 
-    async unblockUser(req: Request, res: Response) {
+    async unblockUser(req: AuthenticatedRequest, res: Response) {
         try {
             await this._unblockUserService.execute(req.params.id);
             res.status(HttpStatusCode.OK).json({ message: "User unblocked successfully" });

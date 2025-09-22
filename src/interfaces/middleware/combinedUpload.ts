@@ -4,6 +4,7 @@ import cloudinary from '../../utils/cloudinary';
 import { s3 } from '../../infrastructure/aws/s3Client';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
+import { logger } from '../../utils/logger';
 
 // Configure multer for handling multiple fields
 export const uploadFields = multer({ 
@@ -96,7 +97,7 @@ export const handleCombinedUploads = async (req: any, res: Response, next: NextF
 
     next();
   } catch (error) {
-    console.error('Upload error:', error);
+    logger.error('Upload error', { error });
     res.status(400).json({ 
       error: error instanceof Error ? error.message : 'Upload failed',
       code: 'UPLOAD_ERROR'
