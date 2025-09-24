@@ -13,7 +13,7 @@ import compilerRoutes from './interfaces/routes/compiler.routes'
 const app = express();
 
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000','https://dbacb5b29269.ngrok-free.app'],
+  origin: ['http://localhost:3000', 'http://127.0.0.1:3000','https://dbacb5b29269.ngrok-free.app','https://intervuex.akshaypnair.space'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH ' ,'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
@@ -21,8 +21,8 @@ app.use(cors({
 }));
 app.use(helmet());
 app.use(morgan('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "20mb" }));
+app.use(express.urlencoded({ extended: true, limit: "20mb"}));
 app.use(cookieParser())
 
 //Routes

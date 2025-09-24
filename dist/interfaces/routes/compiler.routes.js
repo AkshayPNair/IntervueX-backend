@@ -1,0 +1,20 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const authMiddleware_1 = require("../middleware/authMiddleware");
+const runCodeUseCase_1 = require("../../application/use-cases/compiler/runCodeUseCase");
+const listLanguagesUseCase_1 = require("../../application/use-cases/compiler/listLanguagesUseCase");
+const compiler_controller_1 = require("../controllers/compiler/compiler.controller");
+const judge0Service_1 = require("../../infrastructure/external/services/judge0Service");
+const router = express_1.default.Router();
+router.use(authMiddleware_1.authenticateToken);
+const judge0Service = new judge0Service_1.Judge0Service();
+const runCodeUseCase = new runCodeUseCase_1.RunCodeUseCase(judge0Service);
+const listLanguagesUseCase = new listLanguagesUseCase_1.ListLanguagesUseCase(judge0Service);
+const compilerController = new compiler_controller_1.CompilerController(runCodeUseCase, listLanguagesUseCase);
+router.post('/run', (req, res) => compilerController.runCode(req, res));
+router.get('/languages', (req, res) => compilerController.listLanguages(req, res));
+exports.default = router;
