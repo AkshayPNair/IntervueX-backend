@@ -6,6 +6,7 @@ import { AuthenticatedRequest } from '../../middleware/authMiddleware';
 import { IGetUserProfileService } from '../../../domain/interfaces/IGetUserProfileService';
 import { IGetAllInterviewersService } from '../../../domain/interfaces/IGetAllInterviewersService';
 import { IGetInterviewerByIdService } from '../../../domain/interfaces/IGetInterviewerByIdService';
+import { IGetInterviewerProfileService } from '../../../domain/interfaces/IGetInterviewerProfileService';
 import { IUpdateUserProfileService } from '../../../domain/interfaces/IUpdateUserProfileService';
 import { IGenerateAvailableSlotsService } from '../../../domain/interfaces/IGenerateAvailableSlotsService';
 import { ICreateBookingService } from '../../../domain/interfaces/ICreateBookingService';
@@ -50,6 +51,7 @@ export class UserController {
         private _completeBookingService: ICompleteBookingService,
         private _listFeedbacksService: IListUserFeedbacksService,
         private _getFeedbackByIdService: IGetUserFeedbackByIdService,
+        private _getInterviewerProfileService: IGetInterviewerProfileService,
         private _submitInterviewerRatingService: ISubmitInterviewerRatingService,
         private _getInterviewerRatingByBookingIdService: IGetInterviewerRatingByBookingIdService,
         private _getUserPaymentHistoryService: IGetUserPaymentHistoryService,
@@ -312,9 +314,13 @@ export class UserController {
             const bookingData: CreateBookingDTO = toCreateBookingDTO(rawBookingData)
             const result = await this._createBookingService.execute(userId, bookingData)
 
+            const userProfile = await this._getUserProfileService.execute(userId)
+            const interviewerProfile = await this._getInterviewerProfileService.execute(result.interviewerId)
+
             this._notificationPublisher.toInterviewer(result.interviewerId, NotifyEvents.SessionBooked, {
                 bookingId: result.id,
                 userId: result.userId,
+                userName: userProfile.name,
                 interviewerId: result.interviewerId,
                 date: result.date,
                 startTime: result.startTime,
@@ -328,6 +334,8 @@ export class UserController {
                 this._notificationPublisher.toUser(result.userId, NotifyEvents.WalletDebit, {
                     bookingId: result.id,
                     amount: result.amount,
+                    interviewerId: result.interviewerId,
+                    interviewerName: interviewerProfile.user.name,
                     timestamp: new Date().toISOString(),
                 })
             }
@@ -337,6 +345,8 @@ export class UserController {
                 amount: result.amount,
                 interviewerAmount: result.interviewerAmount,
                 adminFee: result.adminFee,
+                userId: result.userId,
+                userName: userProfile.name,
                 timestamp: new Date().toISOString(),
             })
             // Admin credit
@@ -346,6 +356,10 @@ export class UserController {
                 amount: result.amount,
                 interviewerAmount: result.interviewerAmount,
                 adminFee: result.adminFee,
+                userId: result.userId,
+                userName: userProfile.name,
+                interviewerId: result.interviewerId,
+                interviewerName: interviewerProfile.user.name,
                 timestamp: new Date().toISOString(),
             })
 
@@ -655,12 +669,14 @@ export class UserController {
                 );
             }
             const result = await this._submitInterviewerRatingService.execute(userId, body);
-
+           
+            const userProfile = await this._getUserProfileService.execute(userId)
             // Notify interviewer when user submits a rating
             this._notificationPublisher.toInterviewer(result.interviewerId, NotifyEvents.RatingSubmitted, {
                 bookingId: result.bookingId,
                 interviewerId: result.interviewerId,
                 userId: result.userId,
+                userName: userProfile.name,
                 rating: result.rating,
                 createdAt: result.createdAt,
             })

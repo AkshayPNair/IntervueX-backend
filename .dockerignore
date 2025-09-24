@@ -1,0 +1,23 @@
+# Dependencies
+node_modules
+
+# Build outputs
+dist
+build
+
+# Logs
+npm-debug.log
+
+# Env files (we inject with docker-compose)
+src/config/.env
+.env.local
+
+# Git & editor junk
+.git
+.gitignore
+.vscode
+.idea
+
+# OS junk
+.DS_Store
+Thumbs.db

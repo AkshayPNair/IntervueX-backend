@@ -1,4 +1,4 @@
-import { Booking } from "../../domain/entities/Booking";
+import { Booking, PaymentMethod } from "../../domain/entities/Booking";
 import { BookingResponseDTO, CreateBookingDTO, InterviewerBookingResponseDTO, AdminBookingListDTO } from "../../domain/dtos/booking.dto";
 import { InterviewerProfileDTO } from "../../domain/dtos/interviewer.dto";
 import { UserProfileDTO } from "../../domain/dtos/user.dto";
@@ -81,4 +81,5 @@ export const toAdminBookingListDTO = (
     startTime: booking.startTime,
     endTime: booking.endTime,
     status: booking.status,
+    paymentMethod:booking.paymentMethod
 });

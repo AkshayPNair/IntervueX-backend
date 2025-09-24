@@ -90,4 +90,5 @@ export interface AdminBookingListDTO{
     startTime: string;
     endTime: string;
     status: BookingStatus;
+    paymentMethod:PaymentMethod;
 }
