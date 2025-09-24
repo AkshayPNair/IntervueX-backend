@@ -10,6 +10,7 @@ import { toCreateWalletTransactionDTO } from "../../../application/mappers/walle
 import { PaymentMethod } from "../../../domain/entities/Booking";
 import { IWalletRepository } from "../../../domain/interfaces/IWalletRepository";
 import { ICreateBookingService } from "../../../domain/interfaces/ICreateBookingService";
+import { NotificationPublisher, NotifyEvents } from "../../../interfaces/socket/notificationPublisher";
 
 export class CreateBookingUseCase implements ICreateBookingService{
     constructor(

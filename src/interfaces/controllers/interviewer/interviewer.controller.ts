@@ -405,9 +405,12 @@ export class InterviewerController{
             }
             const result=await this._submitFeedbackService.execute(interviewerId, interviewerId,payload)
             
+            const interviewerProfile = await this._getInterviewerProfileService.execute(interviewerId)
+
             this._notificationPublisher?.toUser(result.userId, NotifyEvents.FeedbackSubmitted, {
                 bookingId: result.bookingId,
                 interviewerId: result.interviewerId,
+                interviewerName: interviewerProfile.user,
                 userId: result.userId,
                 createdAt: result.createdAt,
             })
