@@ -1,0 +1,21 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ErrorCode = void 0;
+var ErrorCode;
+(function (ErrorCode) {
+    ErrorCode["USER_ALREADY_EXISTS"] = "USER_ALREADY_EXISTS";
+    ErrorCode["USER_NOT_FOUND"] = "USER_NOT_FOUND";
+    ErrorCode["INVALID_OTP"] = "INVALID_OTP";
+    ErrorCode["EXPIRED_OTP"] = "EXPIRED_OTP";
+    ErrorCode["INVALID_TOKEN"] = "INVALID_TOKEN";
+    ErrorCode["UNAUTHORIZED"] = "UNAUTHORIZED";
+    ErrorCode["VALIDATION_ERROR"] = "VALIDATION_ERROR";
+    ErrorCode["UNKNOWN_ERROR"] = "UNKNOWN_ERROR";
+    ErrorCode["INVALID_CREDENTIALS"] = "INVALID_CREDENTIALS";
+    ErrorCode["FORBIDDEN"] = "INSUFFICIENT_PERMISSIONS";
+    ErrorCode["INTERNAL_ERROR"] = "INTERNAL_SERVER_ERROR";
+    ErrorCode["NOT_FOUND"] = "NOT_FOUND";
+    ErrorCode["BAD_REQUEST"] = "BAD_REQUEST";
+    ErrorCode["DATABASE_ERROR"] = "DATABASE_ERROR";
+    ErrorCode["PAYMENT_ERROR"] = "PAYMENT_ERROR";
+})(ErrorCode || (exports.ErrorCode = ErrorCode = {}));

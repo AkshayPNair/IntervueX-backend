@@ -30,6 +30,7 @@ import { ChangePasswordUseCase } from '../../application/use-cases/auth/changePa
 import { DeleteAccountUseCase } from '../../application/use-cases/auth/deleteAccountUseCase';
 import { InterviewerRepository } from '../../infrastructure/database/repositories/interviewerRepository';
 import { NotificationPublisher } from '../socket/notificationPublisher';
+import { GetInterviewerProfileUseCase } from '../../application/use-cases/interviewer/getInterviewerProfileUseCase';
 
 const router = express.Router();
 router.use(authenticateToken,requireUser);
@@ -61,6 +62,7 @@ const getUserPaymentHistoryUseCase = new GetUserPaymentHistoryUseCase(bookingRep
 const getUserDashboardUseCase = new GetUserDashboardUseCase(bookingRepository, userRepository, feedbackRepository)
 const changePasswordUseCase = new ChangePasswordUseCase(userRepository)
 const deleteAccountUseCase = new DeleteAccountUseCase(userRepository, interviewerRepository)
+const getInterviewerProfileUseCase=new GetInterviewerProfileUseCase(userRepository,interviewerRepository)
 const userController = new UserController(
     getUserProfileUseCase, 
     updateUserProfileUseCase,
@@ -76,13 +78,14 @@ const userController = new UserController(
     completeBookingUseCase,
     listUserFeedbacksUseCase,
     getUserFeedbackByIdUseCase,
+    getInterviewerProfileUseCase,
     submitInterviewerRatingUseCase,
     getInterviewerRatingByBookingIdUseCase,
     getUserPaymentHistoryUseCase,
     getUserDashboardUseCase,
     changePasswordUseCase,
     deleteAccountUseCase,
-    NotificationPublisher
+    NotificationPublisher,
 );
 
 router.get('/profile', (req, res) => userController.getProfile(req, res));
