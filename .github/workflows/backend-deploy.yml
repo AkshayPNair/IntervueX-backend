@@ -1,0 +1,41 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches:
+      - main  # Trigger deployment on push to main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️ Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2️ Setup Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      # 3 Install dependencies and run tests
+      - name: Install & Test Backend
+        run: |
+          npm install
+          npm run build
+          npm test
+
+      # 4️ SSH into EC2 and deploy
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}       # EC2 public IP or DNS
+          username: ubuntu                     # Default EC2 user
+          key: ${{ secrets.EC2_SSH_KEY }}     # Private PEM key
+          script: |
+            cd ~/IntervueX-backend             # Path on EC2 where backend repo is cloned
+            git pull origin main               # Pull latest code
+            docker-compose down                # Stop old container
+            docker-compose up -d --build      # Rebuild backend container

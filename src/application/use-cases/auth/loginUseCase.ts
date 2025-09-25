@@ -12,8 +12,12 @@ export class LoginUseCase implements ILoginService{
 
     async execute(loginDto:LoginDTO) {
         const user = await this._userRepository.findUserByEmail(loginDto.email);
-        if (!user || !user.isVerified || user.isBlocked) {
-          throw new AppError(ErrorCode.INVALID_CREDENTIALS, 'Invalid credentials', HttpStatusCode.UNAUTHORIZED);
+        if (!user || !user.isVerified ) {
+          throw new AppError(ErrorCode.NOT_FOUND, 'User not registered', HttpStatusCode.UNAUTHORIZED);
+        }
+
+        if(user.isBlocked){
+          throw new AppError(ErrorCode.UNAUTHORIZED, 'User is blocked by admin', HttpStatusCode.UNAUTHORIZED);
         }
 
         const isMatch = await compare(loginDto.password, user.password);
