@@ -20,7 +20,7 @@ jobs:
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu        # EC2 username
-          key: ${{ secrets.EC2_KEY }}
+          key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
           script: |
             cd ~/IntervueX-backend
