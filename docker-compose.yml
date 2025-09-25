@@ -1,0 +1,9 @@
+services:
+  backend:
+    build: .
+    container_name: intervuex-backend
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./src/config/.env
+    restart: always
