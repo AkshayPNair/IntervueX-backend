@@ -6,4 +6,30 @@ services:
       - "5000:5000"
     env_file:
       - ./src/config/.env
-    restart: always
+    restart: unless-stopped
+    depends_on: # This ensures Loki starts before your backend
+      - loki
+
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    ports:
+      - "3100:3100" # Loki's default port
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3001:3000" # Grafana's default port
+    volumes:
+      # This mounts a configuration file to automatically add Loki as a data source
+      - ./grafana-provisioning/:/etc/grafana/provisioning/
+      - grafana-data:/var/lib/grafana
+    restart: unless-stopped
+    depends_on:
+      - loki
+
+volumes:
+  grafana-data:
