@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 import { IBookingRepository } from '../../../domain/interfaces/IBookingRepository';
-import { Booking, BookingStatus } from '../../../domain/entities/Booking';
+import { Booking, BookingStatus, PaymentMethod } from '../../../domain/entities/Booking';
 import { BookingFilterDTO, CreateBookingDTO } from '../../../domain/dtos/booking.dto';
 import { BookingModel, IBookingDocument } from '../models/BookingModel';
 import { AppError } from '../../../application/error/AppError';
@@ -47,7 +47,7 @@ export class BookingRepository extends BaseRepository<IBookingDocument> implemen
                 interviewerAmount,
                 paymentMethod: data.paymentMethod,
                 paymentId: data.paymentId,
-                status: BookingStatus.CONFIRMED
+                status: data.paymentMethod === PaymentMethod.RAZORPAY ? BookingStatus.PENDING : BookingStatus.CONFIRMED
             })
 
             return new Booking(
@@ -244,6 +244,28 @@ export class BookingRepository extends BaseRepository<IBookingDocument> implemen
             throw new AppError(
                 ErrorCode.DATABASE_ERROR,
                 'Failed to update booking status',
+                HttpStatusCode.INTERNAL_SERVER
+            );
+        }
+    }
+
+    async updatePaymentId(bookingId: string, paymentId: string): Promise<void> {
+        try {
+            await this.update(bookingId, {
+                paymentId,
+                updatedAt: new Date()
+            });
+        } catch (error: any) {
+            if (error.name === 'CastError') {
+                throw new AppError(
+                    ErrorCode.VALIDATION_ERROR,
+                    'Invalid booking ID',
+                    HttpStatusCode.BAD_REQUEST
+                );
+            }
+            throw new AppError(
+                ErrorCode.DATABASE_ERROR,
+                'Failed to update payment id',
                 HttpStatusCode.INTERNAL_SERVER
             );
         }

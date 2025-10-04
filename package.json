@@ -29,7 +29,8 @@
   "scripts": {
     "dev": "nodemon --watch src --ext ts --exec ts-node src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "lint": "eslint . --ext .js,.ts,.mjs,.cjs --max-warnings=0"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",

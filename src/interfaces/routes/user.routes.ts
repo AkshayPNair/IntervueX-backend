@@ -22,12 +22,14 @@ import { CompleteBookingUseCase } from '../../application/use-cases/user/complet
 import { FeedbackRepository } from '../../infrastructure/database/repositories/feedbackRepository';
 import { ListUserFeedbacksUseCase } from '../../application/use-cases/user/listUserFeedbacksUseCase';
 import { GetUserFeedbackByIdUseCase } from '../../application/use-cases/user/getUserFeedbackByIdUseCase';
+import { ListInterviewerRatingsUseCase } from '../../application/use-cases/user/listInterviewerRatingsUseCase';
 import { SubmitInterviewerRatingUseCase } from '../../application/use-cases/user/submitInterviewerRatingUseCase';
 import { GetInterviewerRatingByBookingIdUseCase } from '../../application/use-cases/user/getInterviewerRatingByBookingIdUseCase';
 import { GetUserPaymentHistoryUseCase } from '../../application/use-cases/user/getUserPaymentHistoryUseCase';
 import { GetUserDashboardUseCase } from '../../application/use-cases/user/getUserDashboardUseCase';
 import { ChangePasswordUseCase } from '../../application/use-cases/auth/changePasswordUseCase';
 import { DeleteAccountUseCase } from '../../application/use-cases/auth/deleteAccountUseCase';
+import { VerifyPaymentUseCase } from '../../application/use-cases/user/verifyPaymentUseCase';
 import { InterviewerRepository } from '../../infrastructure/database/repositories/interviewerRepository';
 import { NotificationPublisher } from '../socket/notificationPublisher';
 import { GetInterviewerProfileUseCase } from '../../application/use-cases/interviewer/getInterviewerProfileUseCase';
@@ -58,10 +60,12 @@ const listUserFeedbacksUseCase = new ListUserFeedbacksUseCase(feedbackRepository
 const getUserFeedbackByIdUseCase = new GetUserFeedbackByIdUseCase(feedbackRepository);
 const submitInterviewerRatingUseCase=new SubmitInterviewerRatingUseCase(feedbackRepository, bookingRepository)
 const getInterviewerRatingByBookingIdUseCase=new GetInterviewerRatingByBookingIdUseCase(feedbackRepository)
+const listInterviewerRatingsUseCase = new ListInterviewerRatingsUseCase(feedbackRepository)
 const getUserPaymentHistoryUseCase = new GetUserPaymentHistoryUseCase(bookingRepository, userRepository)
 const getUserDashboardUseCase = new GetUserDashboardUseCase(bookingRepository, userRepository, feedbackRepository)
 const changePasswordUseCase = new ChangePasswordUseCase(userRepository)
 const deleteAccountUseCase = new DeleteAccountUseCase(userRepository, interviewerRepository)
+const verifyPaymentUseCase = new VerifyPaymentUseCase(bookingRepository, userRepository, walletRepository);
 const getInterviewerProfileUseCase=new GetInterviewerProfileUseCase(userRepository,interviewerRepository)
 const userController = new UserController(
     getUserProfileUseCase, 
@@ -79,12 +83,14 @@ const userController = new UserController(
     listUserFeedbacksUseCase,
     getUserFeedbackByIdUseCase,
     getInterviewerProfileUseCase,
+    listInterviewerRatingsUseCase,
     submitInterviewerRatingUseCase,
     getInterviewerRatingByBookingIdUseCase,
     getUserPaymentHistoryUseCase,
     getUserDashboardUseCase,
     changePasswordUseCase,
     deleteAccountUseCase,
+    verifyPaymentUseCase,
     NotificationPublisher,
 );
 
@@ -95,10 +101,12 @@ router.delete('/delete', (req,res)=> userController.deleteAccount(req,res))
 router.get('/dashboard', (req,res)=> userController.getDashboard(req,res))
 router.get('/interviewers',(req,res)=>userController.getAllInterviewers(req,res))
 router.get('/interviewers/:id',(req,res)=>userController.getInterviewerById(req,res))
+router.get('/interviewers/:id/ratings',(req,res)=>userController.listInterviewerRatings(req,res))
 router.get('/book-session/:id',(req,res)=>userController.getAvailableSlots(req,res))
 router.post('/bookings',(req,res)=>userController.createBooking(req,res))
 router.get('/bookings',(req,res)=>userController.getUserBookings(req,res))
 router.post('/razorpay/create-order',(req,res)=>userController.createRazorpayOrder(req,res))
+router.post('/razorpay/verify-payment',(req,res)=>userController.verifyPayment(req,res))
 router.post('/bookings/cancel',(req,res)=>userController.cancelBooking(req,res))
 router.get('/wallet/summary',(req,res)=>userController.getWalletSummary(req,res))
 router.get('/wallet/transactions',(req,res)=>userController.getWalletTransactions(req,res))

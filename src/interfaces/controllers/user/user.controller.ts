@@ -17,11 +17,12 @@ import { IGetWalletSummaryService } from '../../../domain/interfaces/IGetWalletS
 import { IListWalletTransactionsService } from '../../../domain/interfaces/IListWalletTransactionsService';
 import { UpdateUserProfileDTO } from '../../../domain/dtos/user.dto';
 import { GenerateAvailableSlotsDTO } from '../../../domain/dtos/slotRule.dto';
-import { CreateBookingDTO, RazorpayOrderDTO, CancelBookingDTO, CompleteBookingDTO } from '../../../domain/dtos/booking.dto';
+import { CreateBookingDTO, RazorpayOrderDTO, CancelBookingDTO, CompleteBookingDTO, VerifyPaymentDTO } from '../../../domain/dtos/booking.dto';
 import { toUpdateUserProfileDTO } from '../../../application/mappers/userMapper';
 import { toCreateBookingDTO } from '../../../application/mappers/bookingMapper';
 import { ICompleteBookingService } from '../../../domain/interfaces/ICompleteBookingService';
 import { IListUserFeedbacksService } from '../../../domain/interfaces/IListUserFeedbacksService';
+import { IListInterviewerRatingsService } from '../../../domain/interfaces/IListInterviewerRatingsService';
 import { IGetUserFeedbackByIdService } from '../../../domain/interfaces/IGetUserFeedbackByIdService';
 import { ISubmitInterviewerRatingService } from '../../../domain/interfaces/ISubmitInterviewerRatingService';
 import { IGetInterviewerRatingByBookingIdService } from '../../../domain/interfaces/IGetInterviewerRatingByBookingIdService';
@@ -31,7 +32,8 @@ import { IGetUserDashboardService } from '../../../domain/interfaces/IGetUserDas
 import { IChangePasswordService } from '../../../domain/interfaces/IChangePasswordService';
 import { ChangePasswordDTO } from '../../../domain/dtos/user.dto';
 import { IDeleteAccountService } from '../../../domain/interfaces/IDeleteAccountService';
-import { PaymentMethod } from '../../../domain/entities/Booking';
+import { IVerifyPaymentService } from '../../../domain/interfaces/IVerifyPaymentService';
+import { PaymentMethod,BookingStatus} from '../../../domain/entities/Booking';
 import { INotificationPublisher } from '../../../domain/interfaces/INotificationPublisher';
 import { NotifyEvents } from '../../../interfaces/socket/notificationPublisher';
 
@@ -52,12 +54,14 @@ export class UserController {
         private _listFeedbacksService: IListUserFeedbacksService,
         private _getFeedbackByIdService: IGetUserFeedbackByIdService,
         private _getInterviewerProfileService: IGetInterviewerProfileService,
+        private _listInterviewerRatingsService: IListInterviewerRatingsService,
         private _submitInterviewerRatingService: ISubmitInterviewerRatingService,
         private _getInterviewerRatingByBookingIdService: IGetInterviewerRatingByBookingIdService,
         private _getUserPaymentHistoryService: IGetUserPaymentHistoryService,
         private _getUserDashboardService: IGetUserDashboardService,
         private _changePasswordService: IChangePasswordService,
         private _deleteAccountService: IDeleteAccountService,
+        private _verifyPaymentService: IVerifyPaymentService,
         private _notificationPublisher: INotificationPublisher
     ) { }
 
@@ -250,6 +254,44 @@ export class UserController {
         }
     }
 
+    async listInterviewerRatings(req: AuthenticatedRequest, res: Response) {
+        try {
+            if (!req.user) {
+                throw new AppError(
+                    ErrorCode.UNAUTHORIZED,
+                    "User not authenticated",
+                    HttpStatusCode.UNAUTHORIZED
+                )
+            }
+
+            const { id } = req.params
+            if (!id) {
+                throw new AppError(
+                    ErrorCode.BAD_REQUEST,
+                    'Interviewer ID is required',
+                    HttpStatusCode.BAD_REQUEST
+                )
+            }
+
+            const ratings = await this._listInterviewerRatingsService.execute(id)
+            res.status(HttpStatusCode.OK).json(ratings)
+        } catch (error) {
+            if (error instanceof AppError) {
+                res.status(error.status).json({
+                    error: error.message,
+                    code: error.code,
+                    status: error.status
+                });
+            } else {
+                res.status(HttpStatusCode.INTERNAL_SERVER).json({
+                    error: error instanceof Error ? error.message : "An unexpected error occurred",
+                    code: ErrorCode.UNKNOWN_ERROR,
+                    status: HttpStatusCode.INTERNAL_SERVER
+                });
+            }
+        }
+    }
+
     async getAvailableSlots(req: Request, res: Response) {
         try {
             const { id: interviewerId } = req.params
@@ -317,17 +359,22 @@ export class UserController {
             const userProfile = await this._getUserProfileService.execute(userId)
             const interviewerProfile = await this._getInterviewerProfileService.execute(result.interviewerId)
 
-            this._notificationPublisher.toInterviewer(result.interviewerId, NotifyEvents.SessionBooked, {
-                bookingId: result.id,
-                userId: result.userId,
-                userName: userProfile.name,
-                interviewerId: result.interviewerId,
-                date: result.date,
-                startTime: result.startTime,
-                endTime: result.endTime,
-                amount: result.amount,
-                createdAt: result.createdAt,
-            })
+            if (result.status === BookingStatus.CONFIRMED) {
+                const userProfile = await this._getUserProfileService.execute(userId)
+                const interviewerProfile = await this._getInterviewerProfileService.execute(result.interviewerId)
+
+                this._notificationPublisher.toInterviewer(result.interviewerId, NotifyEvents.SessionBooked, {
+                    bookingId: result.id,
+                    userId: result.userId,
+                    userName: userProfile.name,
+                    interviewerId: result.interviewerId,
+                    date: result.date,
+                    startTime: result.startTime,
+                    endTime: result.endTime,
+                    amount: result.amount,
+                    createdAt: result.createdAt,
+                })
+            }
 
             if (result.paymentMethod === PaymentMethod.WALLET) {
                 // User debit
@@ -811,6 +858,48 @@ export class UserController {
                     error: error instanceof Error ? error.message : "An unexpected error occurred",
                     code: ErrorCode.UNKNOWN_ERROR,
                     status: HttpStatusCode.INTERNAL_SERVER,
+                });
+            }
+        }
+    }
+
+     async verifyPayment(req: AuthenticatedRequest, res: Response) {
+        try {
+            if (!req.user) {
+                throw new AppError(
+                    ErrorCode.UNAUTHORIZED,
+                    "User not authenticated",
+                    HttpStatusCode.UNAUTHORIZED
+                );
+            }
+
+            const userId = req.user.id;
+            const body = req.body as VerifyPaymentDTO;
+
+            if (!body.razorpay_order_id || !body.razorpay_payment_id || !body.razorpay_signature || !body.bookingId) {
+                throw new AppError(
+                    ErrorCode.VALIDATION_ERROR,
+                    "razorpay_order_id, razorpay_payment_id, razorpay_signature, and bookingId are required",
+                    HttpStatusCode.BAD_REQUEST
+                );
+            }
+
+            await this._verifyPaymentService.execute(body, userId);
+
+            res.status(HttpStatusCode.OK).json({ message: "Payment verified successfully" });
+
+        } catch (error) {
+            if (error instanceof AppError) {
+                res.status(error.status).json({
+                    error: error.message,
+                    code: error.code,
+                    status: error.status
+                });
+            } else {
+                res.status(HttpStatusCode.INTERNAL_SERVER).json({
+                    error: error instanceof Error ? error.message : "An unexpected error occurred",
+                    code: ErrorCode.UNKNOWN_ERROR,
+                    status: HttpStatusCode.INTERNAL_SERVER
                 });
             }
         }

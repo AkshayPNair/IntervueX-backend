@@ -23,6 +23,29 @@ export class SignupUserUseCase implements ISignupService{
     userDto: SignupUserDTO,
     interviewerDto: SignupInterviewerDTO
   ){
+    // Validation
+    if (!userDto.name || userDto.name.trim().length < 2) {
+      throw new AppError(ErrorCode.VALIDATION_ERROR, 'Name must be at least 2 characters long', HttpStatusCode.BAD_REQUEST);
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!userDto.email || !emailRegex.test(userDto.email)) {
+      throw new AppError(ErrorCode.VALIDATION_ERROR, 'Invalid email format', HttpStatusCode.BAD_REQUEST);
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!userDto.password || !passwordRegex.test(userDto.password)) {
+      throw new AppError(ErrorCode.VALIDATION_ERROR, 'Password must be at least 8 characters long and contain at least one lowercase letter, one uppercase letter, one digit, and one special character', HttpStatusCode.BAD_REQUEST);
+    }
+
+    if (userDto.role === "admin") {
+      throw new AppError(ErrorCode.VALIDATION_ERROR, 'Admin signup not allowed', HttpStatusCode.BAD_REQUEST);
+    }
+
+    if (!["user", "interviewer"].includes(userDto.role)) {
+      throw new AppError(ErrorCode.VALIDATION_ERROR, 'Invalid role. Must be user or interviewer', HttpStatusCode.BAD_REQUEST);
+    }
+
     const existingUser = await this._userRepository.findUserByEmail(userDto.email);
     if (existingUser) {
       if(existingUser.isVerified){

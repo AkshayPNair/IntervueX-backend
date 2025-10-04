@@ -2,7 +2,6 @@ import { UserWithInterviewerProfile } from "../../domain/interfaces/IUserReposit
 import { SignupInterviewerDTO, InterviewerProfileDTO, UpdateInterviewerProfileDTO } from "../../domain/dtos/interviewer.dto";
 import { Interviewer } from "../../domain/entities/Interviewer";
 import { User } from '../../domain/entities/User'
-
 export const toInterviewerDomain = (dto: SignupInterviewerDTO, userId: string): Interviewer => {
     return new Interviewer(
         userId,
