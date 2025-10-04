@@ -261,4 +261,26 @@ export class FeedbackRepository extends BaseRepository<IFeedbackDocument> implem
 
     }
 
+    async getInterviewerRatingsByInterviewer(interviewerId: string): Promise<InterviewerRating[]> {
+        try {
+            const docs = await InterviewerRatingModel.find({ interviewerId: new Types.ObjectId(interviewerId) }).exec();
+            return docs.map((doc) => new InterviewerRating(
+                (doc._id as Types.ObjectId).toString(),
+                doc.bookingId.toString(),
+                doc.interviewerId.toString(),
+                doc.userId.toString(),
+                doc.rating,
+                doc.comment,
+                doc.createdAt
+            ));
+        } catch (error) {
+            throw new AppError(
+                ErrorCode.DATABASE_ERROR,
+                'Failed to fetch interviewer ratings',
+                HttpStatusCode.INTERNAL_SERVER
+            );
+        }
+    }
+
+
 }

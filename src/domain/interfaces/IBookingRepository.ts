@@ -8,6 +8,7 @@ export interface IBookingRepository extends IBaseRepository<Document>{
     getBookingById(bookingId:string):Promise<Booking|null>;
     getBookingsByFilter(filter:BookingFilterDTO):Promise<Booking[]>;
     updateBookingStatus(bookingId:string,status:BookingStatus):Promise<Booking|null>;
+    updatePaymentId(bookingId:string,paymentId:string):Promise<void>;
     checkSlotAvailability(interviewerId:string,date:string,startTime:string,endTime:string):Promise<boolean>;
     cancelBooking(bookingId:string,reason:string):Promise<Booking|null>;
     completeBooking(bookingId:string):Promise<Booking|null>;

@@ -73,7 +73,7 @@ const BookingSchema=new Schema<IBookingDocument>({
     status: {
         type: String,
         enum: Object.values(BookingStatus),
-        default: BookingStatus.COMPLETED,
+        default: BookingStatus.PENDING,
         required: true,
         index: true
     },

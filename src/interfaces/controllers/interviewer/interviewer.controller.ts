@@ -410,7 +410,7 @@ export class InterviewerController{
             this._notificationPublisher?.toUser(result.userId, NotifyEvents.FeedbackSubmitted, {
                 bookingId: result.bookingId,
                 interviewerId: result.interviewerId,
-                interviewerName: interviewerProfile.user,
+                interviewerName: interviewerProfile.user.name,
                 userId: result.userId,
                 createdAt: result.createdAt,
             })

@@ -12,4 +12,5 @@ export interface IFeedbackRepository extends IBaseRepository<Document>{
     getFeedbacksByUser(userId: string): Promise<Feedback[]>;
     createInterviewerRating(interviewerId:string,userId:string,data:SubmitInterviewerFeedbackDTO):Promise<InterviewerRating>
     findInterviewerRatingByBookingId(bookingId:string):Promise<InterviewerRating|null>
+    getInterviewerRatingsByInterviewer(interviewerId: string): Promise<InterviewerRating[]>
 }

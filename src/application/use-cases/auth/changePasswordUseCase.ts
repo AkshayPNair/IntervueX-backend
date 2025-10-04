@@ -17,6 +17,44 @@ export class ChangePasswordUseCase implements IChangePasswordService {
       throw new AppError(ErrorCode.USER_NOT_FOUND, 'User not found', HttpStatusCode.NOT_FOUND);
     }
 
+        if (!dto.currentPassword || dto.currentPassword.trim().length === 0) {
+      throw new AppError(
+        ErrorCode.VALIDATION_ERROR,
+        'Current password is required',
+        HttpStatusCode.BAD_REQUEST
+      );
+    }
+
+    if (!dto.newPassword || dto.newPassword.trim().length === 0) {
+      throw new AppError(
+        ErrorCode.VALIDATION_ERROR,
+        'New password is required',
+        HttpStatusCode.BAD_REQUEST
+      );
+    }
+
+    const sanitizedNewPassword = dto.newPassword.trim();
+
+    const passwordChecks = [
+      { valid: sanitizedNewPassword.length >= 8, message: 'At least 8 characters' },
+      { valid: /[A-Z]/.test(sanitizedNewPassword), message: 'One uppercase letter' },
+      { valid: /[a-z]/.test(sanitizedNewPassword), message: 'One lowercase letter' },
+      { valid: /\d/.test(sanitizedNewPassword), message: 'One number' },
+      { valid: /[!@#$%^&*(),.?":{}|<>]/.test(sanitizedNewPassword), message: 'One special character' },
+    ];
+
+    const failedChecks = passwordChecks
+      .filter((check) => !check.valid)
+      .map((check) => check.message);
+
+    if (failedChecks.length > 0) {
+      throw new AppError(
+        ErrorCode.VALIDATION_ERROR,
+        `New password doesn't meet requirements: ${failedChecks.join(', ')}`,
+        HttpStatusCode.BAD_REQUEST
+      );
+    }
+
     
     const isMatch = await compare(dto.currentPassword, user.password);
     if (!isMatch) {
@@ -28,7 +66,7 @@ export class ChangePasswordUseCase implements IChangePasswordService {
     }
 
     
-    const sameAsCurrent = await compare(dto.newPassword, user.password);
+    const sameAsCurrent = await compare(sanitizedNewPassword, user.password);
     if (sameAsCurrent) {
       throw new AppError(
         ErrorCode.VALIDATION_ERROR,
@@ -37,7 +75,7 @@ export class ChangePasswordUseCase implements IChangePasswordService {
       );
     }
 
-    const newHashed = await hashPassword(dto.newPassword);
+    const newHashed = await hashPassword(sanitizedNewPassword);
     await this._userRepository.updateUser(user.id!, { password: newHashed });
   }
 }
