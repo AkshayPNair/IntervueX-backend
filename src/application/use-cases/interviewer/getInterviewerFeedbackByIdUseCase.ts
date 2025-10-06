@@ -17,6 +17,7 @@ export class GetInterviewerFeedbackByIdUseCase implements IGetInterviewerFeedbac
         if (feedback.interviewerId !== interviewerId) {
             throw new AppError(ErrorCode.FORBIDDEN, 'Not allowed', HttpStatusCode.FORBIDDEN);
         }
+        
         return {
             id: feedback.id,
             bookingId: feedback.bookingId,

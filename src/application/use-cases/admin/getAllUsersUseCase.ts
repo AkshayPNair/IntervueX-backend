@@ -6,8 +6,8 @@ import { IGetAllUsersService } from "../../../domain/interfaces/IGetAllUsersServ
 export class GetAllUsersUseCase implements IGetAllUsersService{
     constructor(private _userRepository: IUserRepository){}
 
-    async execute():Promise<AdminUserListDTO[]>{
-        const users=await this._userRepository.getAllUsers();
-        return toAdminUserListDTOs(users)
+    async execute(searchQuery?: string, role?: string, status?: string, page?: number, pageSize?: number):Promise<{ users: AdminUserListDTO[], total: number }>{
+        const { users, total }=await this._userRepository.getAllUsers(searchQuery, role, status, page, pageSize);
+        return { users: toAdminUserListDTOs(users), total }
     }
 }

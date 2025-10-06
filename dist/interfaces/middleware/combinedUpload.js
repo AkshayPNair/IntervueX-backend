@@ -37,7 +37,7 @@ exports.uploadFields = (0, multer_1.default)({
         }
     },
     limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB limit
+        fileSize: 20 * 1024 * 1024, // 5MB limit
     }
 }).fields([
     { name: 'profilePic', maxCount: 1 },

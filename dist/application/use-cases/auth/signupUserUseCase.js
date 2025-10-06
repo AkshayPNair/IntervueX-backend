@@ -15,6 +15,27 @@ class SignupUserUseCase {
         this._emailService = _emailService;
     }
     async execute(userDto, interviewerDto) {
+        // Validation
+        if (!userDto.name || userDto.name.trim().length < 2) {
+            throw new AppError_1.AppError(ErrorCode_1.ErrorCode.VALIDATION_ERROR, 'Name must be at least 2 characters long', HttpStatusCode_1.HttpStatusCode.BAD_REQUEST);
+        }
+        if (userDto.name.trim().length > 30) {
+            throw new AppError_1.AppError(ErrorCode_1.ErrorCode.VALIDATION_ERROR, 'Name must be 30 characters or less', HttpStatusCode_1.HttpStatusCode.BAD_REQUEST);
+        }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!userDto.email || !emailRegex.test(userDto.email)) {
+            throw new AppError_1.AppError(ErrorCode_1.ErrorCode.VALIDATION_ERROR, 'Invalid email format', HttpStatusCode_1.HttpStatusCode.BAD_REQUEST);
+        }
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        if (!userDto.password || !passwordRegex.test(userDto.password)) {
+            throw new AppError_1.AppError(ErrorCode_1.ErrorCode.VALIDATION_ERROR, 'Password must be at least 8 characters long and contain at least one lowercase letter, one uppercase letter, one digit, and one special character', HttpStatusCode_1.HttpStatusCode.BAD_REQUEST);
+        }
+        if (userDto.role === "admin") {
+            throw new AppError_1.AppError(ErrorCode_1.ErrorCode.VALIDATION_ERROR, 'Admin signup not allowed', HttpStatusCode_1.HttpStatusCode.BAD_REQUEST);
+        }
+        if (!["user", "interviewer"].includes(userDto.role)) {
+            throw new AppError_1.AppError(ErrorCode_1.ErrorCode.VALIDATION_ERROR, 'Invalid role. Must be user or interviewer', HttpStatusCode_1.HttpStatusCode.BAD_REQUEST);
+        }
         const existingUser = await this._userRepository.findUserByEmail(userDto.email);
         if (existingUser) {
             if (existingUser.isVerified) {

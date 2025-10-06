@@ -21,6 +21,8 @@ export const NotifyEvents = {
   WalletCredit: 'notify:wallet-credit',
   WalletDebit: 'notify:wallet-debit',
   NewRegistration: 'notify:new-registration',
+  UserBlocked: 'notify:user-blocked',
+  UserUnblocked: 'notify:user-unblocked',
 } as const
 
 export type NotifyEventName = typeof NotifyEvents[keyof typeof NotifyEvents]

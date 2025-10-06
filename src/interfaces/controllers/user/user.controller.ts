@@ -196,7 +196,8 @@ export class UserController {
                 )
             }
 
-            const result = await this._getAllInterviewersService.execute()
+            const searchQuery = req.query.search as string;
+            const result = await this._getAllInterviewersService.execute(searchQuery)
             res.status(HttpStatusCode.OK).json(result)
         } catch (error) {
             if (error instanceof AppError) {

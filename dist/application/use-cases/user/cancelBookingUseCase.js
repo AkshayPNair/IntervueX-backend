@@ -27,6 +27,19 @@ class CancelBookingUseCase {
             if (booking.status === Booking_1.BookingStatus.COMPLETED) {
                 throw new AppError_1.AppError(ErrorCode_1.ErrorCode.VALIDATION_ERROR, 'Cannot cancel a completed booking', HttpStatusCode_1.HttpStatusCode.BAD_REQUEST);
             }
+            const trimmedReason = (data.reason ?? '').trim();
+            if (!trimmedReason) {
+                throw new AppError_1.AppError(ErrorCode_1.ErrorCode.VALIDATION_ERROR, 'Please provide a reason for cancellation', HttpStatusCode_1.HttpStatusCode.BAD_REQUEST);
+            }
+            if (/^\d+$/.test(trimmedReason)) {
+                throw new AppError_1.AppError(ErrorCode_1.ErrorCode.VALIDATION_ERROR, 'Only numbers are not allowed', HttpStatusCode_1.HttpStatusCode.BAD_REQUEST);
+            }
+            if (/[^a-zA-Z0-9\s]/.test(trimmedReason)) {
+                throw new AppError_1.AppError(ErrorCode_1.ErrorCode.VALIDATION_ERROR, 'Special characters are not allowed', HttpStatusCode_1.HttpStatusCode.BAD_REQUEST);
+            }
+            if (trimmedReason.length < 10) {
+                throw new AppError_1.AppError(ErrorCode_1.ErrorCode.VALIDATION_ERROR, 'Please provide a more detailed reason (at least 10 characters)', HttpStatusCode_1.HttpStatusCode.BAD_REQUEST);
+            }
             const [user, admin] = await Promise.all([
                 this._userRepository.findUserById(booking.userId),
                 this._userRepository.findAdmin()

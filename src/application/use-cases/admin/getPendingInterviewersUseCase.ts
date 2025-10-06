@@ -8,9 +8,9 @@ export class GetPendingInterviewersUseCase implements IGetPendingInterviewersSer
         private _interviewerRepository:IInterviewerRepository
     ){}
 
-    async execute(){
+    async execute(searchQuery?: string){
         try {
-            const pendingInterviewers= await this._userRepository.findPendingInterviewers();
+            const pendingInterviewers= await this._userRepository.findPendingInterviewers(searchQuery);
 
             const interviewersWithProfiles=await Promise.all(
                 pendingInterviewers.filter(user => user.id).map(async (user)=>{

@@ -11,7 +11,7 @@ class GetInterviewerBookingsUseCase {
         this._bookingRepository = _bookingRepository;
         this._userRepository = _userRepository;
     }
-    async execute(interviewerId) {
+    async execute(interviewerId, search) {
         try {
             const interviewer = await this._userRepository.findApprovedInterviewerById(interviewerId);
             if (!interviewer) {
@@ -26,7 +26,13 @@ class GetInterviewerBookingsUseCase {
                     userMap.set(user.id, (0, userMapper_1.toUserProfileDTO)(user));
                 }
             });
-            return bookings.map(booking => (0, bookingMapper_1.toInterviewerBookingResponseDTO)(booking, userMap.get(booking.userId)));
+            let filteredBookings = bookings.map(booking => (0, bookingMapper_1.toInterviewerBookingResponseDTO)(booking, userMap.get(booking.userId)));
+            if (search && search.trim()) {
+                const searchLower = search.toLowerCase().trim();
+                filteredBookings = filteredBookings.filter(booking => booking.userName.toLowerCase().includes(searchLower) ||
+                    booking.userEmail.toLowerCase().includes(searchLower));
+            }
+            return filteredBookings;
         }
         catch (error) {
             if (error instanceof AppError_1.AppError) {

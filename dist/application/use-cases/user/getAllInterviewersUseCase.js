@@ -6,8 +6,8 @@ class GetAllInterviewerUseCase {
     constructor(_userRepository) {
         this._userRepository = _userRepository;
     }
-    async execute() {
-        const interviewers = await this._userRepository.findApprovedInterviewersWithProfiles();
+    async execute(searchQuery) {
+        const interviewers = await this._userRepository.findApprovedInterviewersWithProfiles(searchQuery);
         return interviewers.map(interviewer => (0, userMapper_1.toInterviewerProfileDTO)(interviewer));
     }
 }

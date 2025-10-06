@@ -21,6 +21,8 @@ import { GetAdminDashboardUseCase } from "../../application/use-cases/admin/getA
 import { BookingRepository } from "../../infrastructure/database/repositories/bookingRepository";
 import { ListAdminSessionsUseCase } from "../../application/use-cases/admin/listAdminSessionsUseCase";
 import { AdminSessionController } from "../controllers/admin/session.controller";
+import { GetInterviewerResumeUrlUseCase } from "../../application/use-cases/admin/getInterviewerResumeUrlUseCase";
+import { NotificationPublisher } from "../socket/notificationPublisher";
 
 const router = express.Router();
 router.use(authenticateToken)
@@ -33,18 +35,19 @@ const walletRepository = new WalletRepository();
 const bookingRepository = new BookingRepository()
 
 const getAllUsersUseCase = new GetAllUsersUseCase(userRepository);
-const blockUserUseCase = new BlockUserUseCase(userRepository);
-const unblockUserUseCase = new UnblockUserUseCase(userRepository);
+const blockUserUseCase = new BlockUserUseCase(userRepository,NotificationPublisher);
+const unblockUserUseCase = new UnblockUserUseCase(userRepository,NotificationPublisher);
 const adminUserController = new AdminUserController(getAllUsersUseCase, blockUserUseCase, unblockUserUseCase);
-
 
 const getPendingInterviewersUseCase = new GetPendingInterviewersUseCase(userRepository, interviewerRepository);
 const approveInterviewerUseCase = new ApproveInterviewerUseCase(userRepository,emailService);
 const rejectInterviewerUseCase = new RejectInterviewerUseCase(userRepository,emailService);
+const getInterviewerResumeUrlUseCase = new GetInterviewerResumeUrlUseCase(interviewerRepository);
 const adminInterviewerController = new AdminInterviewerController(
   getPendingInterviewersUseCase,
   approveInterviewerUseCase,
-  rejectInterviewerUseCase
+  rejectInterviewerUseCase,
+  getInterviewerResumeUrlUseCase,
 )
 const adminDashboardUseCase = new GetAdminDashboardUseCase(userRepository,bookingRepository,interviewerRepository);
 
@@ -67,6 +70,7 @@ router.patch('/unblock/:id', (req, res) => adminUserController.unblockUser(req, 
 router.get('/interviewer/pending',(req,res)=>adminInterviewerController.getPendingInterviewers(req,res))
 router.patch('/interviewer/approve/:id',(req,res)=>adminInterviewerController.approveInterviewer(req,res))
 router.patch('/interviewer/reject/:id',(req,res)=>adminInterviewerController.rejectInterviewer(req,res))
+router.get('/interviewer/resume/:userId',(req,res)=>adminInterviewerController.getResumeUrl(req,res))
 
 router.get('/wallet/summary', (req, res) => adminWalletController.getSummary(req, res));
 router.get('/wallet/transactions', (req, res) => adminWalletController.getTransactions(req, res));

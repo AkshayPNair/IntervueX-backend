@@ -308,9 +308,10 @@ export class InterviewerController{
                     HttpStatusCode.UNAUTHORIZED
                 );
             }
-
+            
             const userId=req.user.id;
-            const result=await this._getInterviewerBookingsService.execute(userId)
+            const search = req.query.search as string | undefined;
+            const result=await this._getInterviewerBookingsService.execute(userId, search)
             res.status(HttpStatusCode.OK).json(result)
             
         } catch (error) {

@@ -14,11 +14,16 @@ export class AdminUserController {
 
     async getAllUsers(req:AuthenticatedRequest, res: Response) {
         try {
-            const users = await this._getAllUsersService.execute();
-            res.status(HttpStatusCode.OK).json({ users });
+            const searchQuery = req.query.search as string | undefined;
+            const role = req.query.role as string | undefined;
+            const status = req.query.isBlocked !== undefined ? (req.query.isBlocked === 'true' ? 'Blocked' : 'Active') : undefined;
+            const page = req.query.page ? parseInt(req.query.page as string) : undefined;
+            const pageSize = req.query.pageSize ? parseInt(req.query.pageSize as string) : undefined;
+            const { users, total } = await this._getAllUsersService.execute(searchQuery, role, status, page, pageSize);
+            res.status(HttpStatusCode.OK).json({ users, total, page, pageSize });
         } catch (error) {
-            res.status(HttpStatusCode.INTERNAL_SERVER).json({ 
-                error: "Failed to fetch users" 
+            res.status(HttpStatusCode.INTERNAL_SERVER).json({
+                error: "Failed to fetch users"
             });
         }
     }

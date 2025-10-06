@@ -8,9 +8,9 @@ export class GetAllInterviewerUseCase implements IGetAllInterviewersService{
         private _userRepository:IUserRepository
     ){}
 
-    async execute():Promise<InterviewerProfileDTO[]>{
-        const interviewers=await this._userRepository.findApprovedInterviewersWithProfiles();
-
+     async execute(searchQuery?: string):Promise<InterviewerProfileDTO[]>{
+        const interviewers=await this._userRepository.findApprovedInterviewersWithProfiles(searchQuery);
+        
         return interviewers.map(interviewer=>toInterviewerProfileDTO(interviewer))
     }
 }

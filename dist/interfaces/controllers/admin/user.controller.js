@@ -10,7 +10,8 @@ class AdminUserController {
     }
     async getAllUsers(req, res) {
         try {
-            const users = await this._getAllUsersService.execute();
+            const searchQuery = req.query.search;
+            const users = await this._getAllUsersService.execute(searchQuery);
             res.status(HttpStatusCode_1.HttpStatusCode.OK).json({ users });
         }
         catch (error) {

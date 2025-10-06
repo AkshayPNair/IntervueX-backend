@@ -6,8 +6,8 @@ class GetAllUsersUseCase {
     constructor(_userRepository) {
         this._userRepository = _userRepository;
     }
-    async execute() {
-        const users = await this._userRepository.getAllUsers();
+    async execute(searchQuery) {
+        const users = await this._userRepository.getAllUsers(searchQuery);
         return (0, userMapper_1.toAdminUserListDTOs)(users);
     }
 }

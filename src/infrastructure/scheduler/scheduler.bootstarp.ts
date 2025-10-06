@@ -4,6 +4,9 @@ import { EmailService } from "../external/services/emailService";
 import { SendSessionRemindersUseCase } from "../../application/use-cases/booking/sendSessionRemindersUseCase";
 import { SessionReminderScheduler } from "./sessionRemainderScheduler";
 import { ISendSessionRemaindersService } from "../../domain/interfaces/ISendSessionRemaindersService";
+import { CancelExpiredPendingBookingsUseCase } from "../../application/use-cases/user/cancelExpiredPendingBookingsUseCase";
+import { CancelExpiredPendingBookingsScheduler } from "./cancelExpiredPendingBookingsScheduler";
+import { ICancelExpiredPendingBookingsService } from "../../domain/interfaces/ICancelExpiredPendingBookingsService";
 
 export function bootstrapSchedulers() {
   
@@ -17,8 +20,14 @@ export function bootstrapSchedulers() {
     _emailService
   );
 
-  const scheduler = new SessionReminderScheduler(sessionRemainderScheduler);
-  scheduler.start();
+  const sessionScheduler = new SessionReminderScheduler(sessionRemainderScheduler);
+  sessionScheduler.start();
 
-  return scheduler;
+  const cancelExpiredPendingBookingsService: ICancelExpiredPendingBookingsService = new CancelExpiredPendingBookingsUseCase(
+    _bookingRepository
+  );
+  const cancelScheduler = new CancelExpiredPendingBookingsScheduler(cancelExpiredPendingBookingsService);
+  cancelScheduler.start();
+
+  return { sessionScheduler, cancelScheduler };
 }

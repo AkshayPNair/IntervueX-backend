@@ -21,7 +21,7 @@ const MONGO_URI = process.env.MONGO_URI || '';
 const server = http_1.default.createServer(app_1.default);
 const io = new socket_io_1.Server(server, {
     cors: {
-        origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://dbacb5b29269.ngrok-free.app'],
+        origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://dbacb5b29269.ngrok-free.app', 'https://intervuex.akshaypnair.space'],
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],

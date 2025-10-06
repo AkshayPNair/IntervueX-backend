@@ -248,7 +248,8 @@ class InterviewerController {
                 throw new AppError_1.AppError(ErrorCode_1.ErrorCode.UNAUTHORIZED, "User not authenticated", HttpStatusCode_1.HttpStatusCode.UNAUTHORIZED);
             }
             const userId = req.user.id;
-            const result = await this._getInterviewerBookingsService.execute(userId);
+            const search = req.query.search;
+            const result = await this._getInterviewerBookingsService.execute(userId, search);
             res.status(HttpStatusCode_1.HttpStatusCode.OK).json(result);
         }
         catch (error) {
@@ -333,7 +334,7 @@ class InterviewerController {
             this._notificationPublisher?.toUser(result.userId, notificationPublisher_1.NotifyEvents.FeedbackSubmitted, {
                 bookingId: result.bookingId,
                 interviewerId: result.interviewerId,
-                interviewerName: interviewerProfile.user,
+                interviewerName: interviewerProfile.user.name,
                 userId: result.userId,
                 createdAt: result.createdAt,
             });

@@ -1,5 +1,5 @@
 import { AdminBookingListDTO } from "../dtos/booking.dto";
 
 export interface IListAdminSessionsService {
-  execute(): Promise<AdminBookingListDTO[]>;
+  execute(searchQuery?: string, page?: number, pageSize?: number): Promise<{ sessions: AdminBookingListDTO[], total: number }>;
 }

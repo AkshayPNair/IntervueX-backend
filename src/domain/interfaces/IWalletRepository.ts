@@ -21,6 +21,6 @@ export interface WalletSummary{
 export interface IWalletRepository{
     getOrCreateWallet(userId:string, role:'admin'|'interviewer'|'user'):Promise<Wallet>;
     createTransaction(data:CreateTransaction):Promise<WalletTransaction>;
-    listTransactions(userId:string,role:'admin'|'interviewer'|'user'):Promise<WalletTransaction[]>;
+    listTransactions(userId:string,role:'admin'|'interviewer'|'user', searchQuery?:string):Promise<WalletTransaction[]>;
     getSummary(userId:string,role:'admin'|'interviewer'|'user'):Promise<WalletSummary>
 }

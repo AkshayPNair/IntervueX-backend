@@ -21,8 +21,8 @@ class SendSessionRemindersUseCase {
             if (!start)
                 continue;
             const minutesToStart = Math.floor((start.getTime() - now.getTime()) / 60000);
-            let shouldSend15 = minutesToStart === 15 && !b.reminderEmail15Sent;
-            let shouldSend5 = minutesToStart === 5 && !b.reminderEmail5Sent;
+            const shouldSend15 = minutesToStart === 15 && !b.reminderEmail15Sent;
+            const shouldSend5 = minutesToStart === 5 && !b.reminderEmail5Sent;
             if (!shouldSend15 && !shouldSend5)
                 continue;
             // Fetch user and interviewer details

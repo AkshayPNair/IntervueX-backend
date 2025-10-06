@@ -33,7 +33,7 @@ class BookingRepository extends baseRepository_1.BaseRepository {
                 interviewerAmount,
                 paymentMethod: data.paymentMethod,
                 paymentId: data.paymentId,
-                status: Booking_1.BookingStatus.CONFIRMED
+                status: data.paymentMethod === Booking_1.PaymentMethod.RAZORPAY ? Booking_1.BookingStatus.PENDING : Booking_1.BookingStatus.CONFIRMED
             });
             return new Booking_1.Booking(bookingDoc._id.toString(), bookingDoc.userId.toString(), bookingDoc.interviewerId.toString(), bookingDoc.date, bookingDoc.startTime, bookingDoc.endTime, bookingDoc.amount, bookingDoc.adminFee, bookingDoc.interviewerAmount, bookingDoc.status, bookingDoc.paymentMethod, bookingDoc.paymentId, bookingDoc.cancellationReason, bookingDoc.reminderEmail15Sent ?? false, bookingDoc.reminderEmail5Sent ?? false, bookingDoc.createdAt, bookingDoc.updatedAt);
         }
@@ -114,6 +114,20 @@ class BookingRepository extends baseRepository_1.BaseRepository {
             throw new AppError_1.AppError(ErrorCode_1.ErrorCode.DATABASE_ERROR, 'Failed to update booking status', HttpStatusCode_1.HttpStatusCode.INTERNAL_SERVER);
         }
     }
+    async updatePaymentId(bookingId, paymentId) {
+        try {
+            await this.update(bookingId, {
+                paymentId,
+                updatedAt: new Date()
+            });
+        }
+        catch (error) {
+            if (error.name === 'CastError') {
+                throw new AppError_1.AppError(ErrorCode_1.ErrorCode.VALIDATION_ERROR, 'Invalid booking ID', HttpStatusCode_1.HttpStatusCode.BAD_REQUEST);
+            }
+            throw new AppError_1.AppError(ErrorCode_1.ErrorCode.DATABASE_ERROR, 'Failed to update payment id', HttpStatusCode_1.HttpStatusCode.INTERNAL_SERVER);
+        }
+    }
     async cancelBooking(bookingId, reason) {
         try {
             const updatedDoc = await this.update(bookingId, {
@@ -173,6 +187,20 @@ class BookingRepository extends baseRepository_1.BaseRepository {
         }
         catch (error) {
             throw new AppError_1.AppError(ErrorCode_1.ErrorCode.DATABASE_ERROR, 'Failed to update reminder flags', HttpStatusCode_1.HttpStatusCode.INTERNAL_SERVER);
+        }
+    }
+    async getExpiredPendingBookings(olderThan) {
+        try {
+            const bookingDocs = await this.findAll({
+                status: Booking_1.BookingStatus.PENDING,
+                paymentMethod: Booking_1.PaymentMethod.RAZORPAY
+            });
+            // Filter by createdAt in memory as a temporary fix
+            const expiredDocs = bookingDocs.filter(doc => doc.createdAt < olderThan);
+            return expiredDocs.map(doc => new Booking_1.Booking(doc._id.toString(), doc.userId.toString(), doc.interviewerId.toString(), doc.date, doc.startTime, doc.endTime, doc.amount, doc.adminFee, doc.interviewerAmount, doc.status, doc.paymentMethod, doc.paymentId, doc.cancellationReason, doc.reminderEmail15Sent ?? false, doc.reminderEmail5Sent ?? false, doc.createdAt, doc.updatedAt));
+        }
+        catch (error) {
+            throw new AppError_1.AppError(ErrorCode_1.ErrorCode.DATABASE_ERROR, 'Failed to get expired pending bookings', HttpStatusCode_1.HttpStatusCode.INTERNAL_SERVER);
         }
     }
 }
