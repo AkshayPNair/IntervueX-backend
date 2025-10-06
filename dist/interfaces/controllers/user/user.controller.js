@@ -9,7 +9,7 @@ const bookingMapper_1 = require("../../../application/mappers/bookingMapper");
 const Booking_1 = require("../../../domain/entities/Booking");
 const notificationPublisher_1 = require("../../../interfaces/socket/notificationPublisher");
 class UserController {
-    constructor(_getUserProfileService, _updateUserProfileService, _getAllInterviewersService, _getInterviewerByIdService, _generateAvailableSlotsService, _createBookingService, _getUserBookingsService, _createRazorpayOrderService, _cancelBookingService, _getWalletSummaryService, _listWalletTransactionsService, _completeBookingService, _listFeedbacksService, _getFeedbackByIdService, _getInterviewerProfileService, _submitInterviewerRatingService, _getInterviewerRatingByBookingIdService, _getUserPaymentHistoryService, _getUserDashboardService, _changePasswordService, _deleteAccountService, _notificationPublisher) {
+    constructor(_getUserProfileService, _updateUserProfileService, _getAllInterviewersService, _getInterviewerByIdService, _generateAvailableSlotsService, _createBookingService, _getUserBookingsService, _createRazorpayOrderService, _cancelBookingService, _getWalletSummaryService, _listWalletTransactionsService, _completeBookingService, _listFeedbacksService, _getFeedbackByIdService, _getInterviewerProfileService, _listInterviewerRatingsService, _submitInterviewerRatingService, _getInterviewerRatingByBookingIdService, _getUserPaymentHistoryService, _getUserDashboardService, _changePasswordService, _deleteAccountService, _verifyPaymentService, _notificationPublisher) {
         this._getUserProfileService = _getUserProfileService;
         this._updateUserProfileService = _updateUserProfileService;
         this._getAllInterviewersService = _getAllInterviewersService;
@@ -25,12 +25,14 @@ class UserController {
         this._listFeedbacksService = _listFeedbacksService;
         this._getFeedbackByIdService = _getFeedbackByIdService;
         this._getInterviewerProfileService = _getInterviewerProfileService;
+        this._listInterviewerRatingsService = _listInterviewerRatingsService;
         this._submitInterviewerRatingService = _submitInterviewerRatingService;
         this._getInterviewerRatingByBookingIdService = _getInterviewerRatingByBookingIdService;
         this._getUserPaymentHistoryService = _getUserPaymentHistoryService;
         this._getUserDashboardService = _getUserDashboardService;
         this._changePasswordService = _changePasswordService;
         this._deleteAccountService = _deleteAccountService;
+        this._verifyPaymentService = _verifyPaymentService;
         this._notificationPublisher = _notificationPublisher;
     }
     async getProfile(req, res) {
@@ -134,7 +136,8 @@ class UserController {
             if (!req.user) {
                 throw new AppError_1.AppError(ErrorCode_1.ErrorCode.UNAUTHORIZED, 'User not authenticated', HttpStatusCode_1.HttpStatusCode.UNAUTHORIZED);
             }
-            const result = await this._getAllInterviewersService.execute();
+            const searchQuery = req.query.search;
+            const result = await this._getAllInterviewersService.execute(searchQuery);
             res.status(HttpStatusCode_1.HttpStatusCode.OK).json(result);
         }
         catch (error) {
@@ -165,6 +168,35 @@ class UserController {
             }
             const result = await this._getInterviewerByIdService.execute(id);
             res.status(HttpStatusCode_1.HttpStatusCode.OK).json(result);
+        }
+        catch (error) {
+            if (error instanceof AppError_1.AppError) {
+                res.status(error.status).json({
+                    error: error.message,
+                    code: error.code,
+                    status: error.status
+                });
+            }
+            else {
+                res.status(HttpStatusCode_1.HttpStatusCode.INTERNAL_SERVER).json({
+                    error: error instanceof Error ? error.message : "An unexpected error occurred",
+                    code: ErrorCode_1.ErrorCode.UNKNOWN_ERROR,
+                    status: HttpStatusCode_1.HttpStatusCode.INTERNAL_SERVER
+                });
+            }
+        }
+    }
+    async listInterviewerRatings(req, res) {
+        try {
+            if (!req.user) {
+                throw new AppError_1.AppError(ErrorCode_1.ErrorCode.UNAUTHORIZED, "User not authenticated", HttpStatusCode_1.HttpStatusCode.UNAUTHORIZED);
+            }
+            const { id } = req.params;
+            if (!id) {
+                throw new AppError_1.AppError(ErrorCode_1.ErrorCode.BAD_REQUEST, 'Interviewer ID is required', HttpStatusCode_1.HttpStatusCode.BAD_REQUEST);
+            }
+            const ratings = await this._listInterviewerRatingsService.execute(id);
+            res.status(HttpStatusCode_1.HttpStatusCode.OK).json(ratings);
         }
         catch (error) {
             if (error instanceof AppError_1.AppError) {
@@ -230,17 +262,21 @@ class UserController {
             const result = await this._createBookingService.execute(userId, bookingData);
             const userProfile = await this._getUserProfileService.execute(userId);
             const interviewerProfile = await this._getInterviewerProfileService.execute(result.interviewerId);
-            this._notificationPublisher.toInterviewer(result.interviewerId, notificationPublisher_1.NotifyEvents.SessionBooked, {
-                bookingId: result.id,
-                userId: result.userId,
-                userName: userProfile.name,
-                interviewerId: result.interviewerId,
-                date: result.date,
-                startTime: result.startTime,
-                endTime: result.endTime,
-                amount: result.amount,
-                createdAt: result.createdAt,
-            });
+            if (result.status === Booking_1.BookingStatus.CONFIRMED) {
+                const userProfile = await this._getUserProfileService.execute(userId);
+                const interviewerProfile = await this._getInterviewerProfileService.execute(result.interviewerId);
+                this._notificationPublisher.toInterviewer(result.interviewerId, notificationPublisher_1.NotifyEvents.SessionBooked, {
+                    bookingId: result.id,
+                    userId: result.userId,
+                    userName: userProfile.name,
+                    interviewerId: result.interviewerId,
+                    date: result.date,
+                    startTime: result.startTime,
+                    endTime: result.endTime,
+                    amount: result.amount,
+                    createdAt: result.createdAt,
+                });
+            }
             if (result.paymentMethod === Booking_1.PaymentMethod.WALLET) {
                 // User debit
                 this._notificationPublisher.toUser(result.userId, notificationPublisher_1.NotifyEvents.WalletDebit, {
@@ -652,6 +688,36 @@ class UserController {
                     error: error instanceof Error ? error.message : "An unexpected error occurred",
                     code: ErrorCode_1.ErrorCode.UNKNOWN_ERROR,
                     status: HttpStatusCode_1.HttpStatusCode.INTERNAL_SERVER,
+                });
+            }
+        }
+    }
+    async verifyPayment(req, res) {
+        try {
+            if (!req.user) {
+                throw new AppError_1.AppError(ErrorCode_1.ErrorCode.UNAUTHORIZED, "User not authenticated", HttpStatusCode_1.HttpStatusCode.UNAUTHORIZED);
+            }
+            const userId = req.user.id;
+            const body = req.body;
+            if (!body.razorpay_order_id || !body.razorpay_payment_id || !body.razorpay_signature || !body.bookingId) {
+                throw new AppError_1.AppError(ErrorCode_1.ErrorCode.VALIDATION_ERROR, "razorpay_order_id, razorpay_payment_id, razorpay_signature, and bookingId are required", HttpStatusCode_1.HttpStatusCode.BAD_REQUEST);
+            }
+            await this._verifyPaymentService.execute(body, userId);
+            res.status(HttpStatusCode_1.HttpStatusCode.OK).json({ message: "Payment verified successfully" });
+        }
+        catch (error) {
+            if (error instanceof AppError_1.AppError) {
+                res.status(error.status).json({
+                    error: error.message,
+                    code: error.code,
+                    status: error.status
+                });
+            }
+            else {
+                res.status(HttpStatusCode_1.HttpStatusCode.INTERNAL_SERVER).json({
+                    error: error instanceof Error ? error.message : "An unexpected error occurred",
+                    code: ErrorCode_1.ErrorCode.UNKNOWN_ERROR,
+                    status: HttpStatusCode_1.HttpStatusCode.INTERNAL_SERVER
                 });
             }
         }

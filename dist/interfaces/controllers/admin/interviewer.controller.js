@@ -11,7 +11,8 @@ class AdminInterviewerController {
     }
     async getPendingInterviewers(req, res) {
         try {
-            const result = await this._getPendingInterviewersService.execute();
+            const searchQuery = req.query.search;
+            const result = await this._getPendingInterviewersService.execute(searchQuery);
             res.status(HttpStatusCode_1.HttpStatusCode.OK).json(result);
         }
         catch (error) {

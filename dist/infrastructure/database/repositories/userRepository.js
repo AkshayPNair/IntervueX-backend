@@ -67,8 +67,16 @@ class UserRepository extends baseRepository_1.BaseRepository {
     async updateUserVerification(email) {
         await this.model.updateOne({ email }, { $set: { isVerified: true, otp: null, otpExpiry: null } });
     }
-    async getAllUsers() {
-        const results = await this.model.find({ role: { $in: ['user', 'interviewer'] } });
+    async getAllUsers(searchQuery) {
+        const query = { role: { $in: ['user', 'interviewer'] } };
+        if (searchQuery && searchQuery.trim()) {
+            const searchRegex = new RegExp(searchQuery.trim(), 'i');
+            query.$or = [
+                { name: { $regex: searchRegex } },
+                { email: { $regex: searchRegex } }
+            ];
+        }
+        const results = await this.model.find(query);
         return results.map(mapDocToUser);
     }
     async blockUserById(userId) {
@@ -80,13 +88,21 @@ class UserRepository extends baseRepository_1.BaseRepository {
     async updatePassword(email, newPassword) {
         await this.model.updateOne({ email }, { $set: { password: newPassword } });
     }
-    async findPendingInterviewers() {
-        const results = await this.model.find({
+    async findPendingInterviewers(searchQuery) {
+        const query = {
             role: 'interviewer',
             isVerified: true,
             isApproved: false,
             isRejected: { $ne: true }
-        });
+        };
+        if (searchQuery && searchQuery.trim()) {
+            const searchRegex = new RegExp(searchQuery.trim(), 'i');
+            query.$or = [
+                { name: { $regex: searchRegex } },
+                { email: { $regex: searchRegex } }
+            ];
+        }
+        const results = await this.model.find(query);
         return results.map(mapDocToUser);
     }
     async updateUser(userId, update) {
@@ -99,8 +115,8 @@ class UserRepository extends baseRepository_1.BaseRepository {
         const result = await this.model.findByIdAndUpdate(userId, { $set: profileData }, { new: true });
         return result ? mapDocToUser(result) : null;
     }
-    async findApprovedInterviewersWithProfiles() {
-        const results = await this.model.aggregate([
+    async findApprovedInterviewersWithProfiles(searchQuery) {
+        const pipeline = [
             {
                 $match: {
                     role: "interviewer",
@@ -138,7 +154,22 @@ class UserRepository extends baseRepository_1.BaseRepository {
                     "interviewerProfile.hourlyRate": 1,
                 }
             }
-        ]);
+        ];
+        if (searchQuery && searchQuery.trim()) {
+            const searchRegex = new RegExp(searchQuery.trim(), 'i');
+            pipeline.push({
+                $match: {
+                    $or: [
+                        { name: { $regex: searchRegex } },
+                        { "interviewerProfile.jobTitle": { $regex: searchRegex } },
+                        { "interviewerProfile.professionalBio": { $regex: searchRegex } },
+                        { "interviewerProfile.technicalSkills": { $elemMatch: { $regex: searchRegex } } },
+                        { skills: { $elemMatch: { $regex: searchRegex } } }
+                    ]
+                }
+            });
+        }
+        const results = await this.model.aggregate(pipeline);
         return results;
     }
     async findApprovedInterviewerById(interviewerId) {

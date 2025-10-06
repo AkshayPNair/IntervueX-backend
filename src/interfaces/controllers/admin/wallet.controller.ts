@@ -49,7 +49,8 @@ export class AdminWalletController {
             }
             const adminId = req.user.id
             const role = "admin"
-            const data = await this._listWalletTransactionsService.execute(adminId, role)
+            const searchQuery = req.query.search as string | undefined;
+            const data = await this._listWalletTransactionsService.execute(adminId, role, searchQuery)
             res.status(HttpStatusCode.OK).json(data)
         } catch (error) {
             if (error instanceof AppError) {

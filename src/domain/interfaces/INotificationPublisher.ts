@@ -5,6 +5,8 @@ export type NotifyEventName =
     | 'notify:wallet-credit'
     | 'notify:wallet-debit'
     | 'notify:new-registration'
+    | 'notify:user-blocked'
+    | 'notify:user-unblocked'
 
 export type Payload = Record<string, unknown>
 

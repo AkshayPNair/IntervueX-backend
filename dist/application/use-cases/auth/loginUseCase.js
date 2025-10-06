@@ -12,8 +12,11 @@ class LoginUseCase {
     }
     async execute(loginDto) {
         const user = await this._userRepository.findUserByEmail(loginDto.email);
-        if (!user || !user.isVerified || user.isBlocked) {
-            throw new AppError_1.AppError(ErrorCode_1.ErrorCode.INVALID_CREDENTIALS, 'Invalid credentials', HttpStatusCode_1.HttpStatusCode.UNAUTHORIZED);
+        if (!user || !user.isVerified) {
+            throw new AppError_1.AppError(ErrorCode_1.ErrorCode.NOT_FOUND, 'User not registered', HttpStatusCode_1.HttpStatusCode.UNAUTHORIZED);
+        }
+        if (user.isBlocked) {
+            throw new AppError_1.AppError(ErrorCode_1.ErrorCode.UNAUTHORIZED, 'User is blocked by admin', HttpStatusCode_1.HttpStatusCode.UNAUTHORIZED);
         }
         const isMatch = await (0, bcryptjs_1.compare)(loginDto.password, user.password);
         if (!isMatch) {

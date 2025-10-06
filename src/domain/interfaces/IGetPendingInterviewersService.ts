@@ -1,5 +1,5 @@
 export interface IGetPendingInterviewersService{
-    execute():Promise<{
+    execute(searchQuery?: string):Promise<{
         success:boolean;
         interviewers:Array<{
             id:string;

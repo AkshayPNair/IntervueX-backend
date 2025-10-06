@@ -36,7 +36,7 @@ export class GetAdminDashboardUseCase implements IGetAdminDashboardService {
   // Compute high-level stats for the dashboard
   private async computeStats(): Promise<AdminDashboardStatsDTO> {
     // Users
-    const allUsers = await this._userRepository.getAllUsers();
+    const { users: allUsers } = await this._userRepository.getAllUsers();
     const totalUsers = allUsers.length;
 
     // Pending interviewers (from UserRepository per project pattern)
@@ -101,8 +101,7 @@ export class GetAdminDashboardUseCase implements IGetAdminDashboardService {
 
   // Build recent activity from available data
   private async getRecentActivity(): Promise<AdminRecentActivityDTO[]> {
-    // No dedicated "recent" methods exist; approximate using all and sort by createdAt
-    const allUsers = await this._userRepository.getAllUsers();
+    const { users: allUsers } = await this._userRepository.getAllUsers();
     const usersSorted = [...allUsers].sort((a, b) => {
       const at = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       const bt = b.createdAt ? new Date(b.createdAt).getTime() : 0;
@@ -116,7 +115,7 @@ export class GetAdminDashboardUseCase implements IGetAdminDashboardService {
       return bt - at;
     });
 
-    // We do not have interviewer repo methods for approvals; use users with role interviewer and isApproved
+
     const interviewerCandidates = allUsers.filter((u) => u.role === "interviewer");
 
     const activities: AdminRecentActivityDTO[] = [];
@@ -181,7 +180,7 @@ export class GetAdminDashboardUseCase implements IGetAdminDashboardService {
 
   // Build users series (week/month/year) from users
   private async getUsersSeries(): Promise<SeriesGroupDTO> {
-    const users = await this._userRepository.getAllUsers();
+    const { users } = await this._userRepository.getAllUsers();
     const week = this.aggregateBy(
       "week",
       users.map(u => ({

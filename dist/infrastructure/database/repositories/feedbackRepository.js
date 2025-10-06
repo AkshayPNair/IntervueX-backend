@@ -124,5 +124,14 @@ class FeedbackRepository extends baseRepository_1.BaseRepository {
             throw new AppError_1.AppError(ErrorCode_1.ErrorCode.DATABASE_ERROR, 'Failed to fetch rating', HttpStatusCode_1.HttpStatusCode.INTERNAL_SERVER);
         }
     }
+    async getInterviewerRatingsByInterviewer(interviewerId) {
+        try {
+            const docs = await InterviewerRatingModel_1.InterviewerRatingModel.find({ interviewerId: new mongoose_1.Types.ObjectId(interviewerId) }).exec();
+            return docs.map((doc) => new InterviewerRating_1.InterviewerRating(doc._id.toString(), doc.bookingId.toString(), doc.interviewerId.toString(), doc.userId.toString(), doc.rating, doc.comment, doc.createdAt));
+        }
+        catch (error) {
+            throw new AppError_1.AppError(ErrorCode_1.ErrorCode.DATABASE_ERROR, 'Failed to fetch interviewer ratings', HttpStatusCode_1.HttpStatusCode.INTERNAL_SERVER);
+        }
+    }
 }
 exports.FeedbackRepository = FeedbackRepository;

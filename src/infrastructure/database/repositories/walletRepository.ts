@@ -106,7 +106,7 @@ export class WalletRepository extends BaseRepository<IWalletDocument> implements
         }
     }
 
-    async listTransactions(userId: string, role: "admin" | "interviewer" | "user"): Promise<WalletTransaction[]> {
+    async listTransactions(userId: string, role: "admin" | "interviewer" | "user", searchQuery?: string): Promise<WalletTransaction[]> {
         try {
 
             const walletDoc = await this.findOne({ userId, role })
@@ -114,7 +114,19 @@ export class WalletRepository extends BaseRepository<IWalletDocument> implements
                 return []
             }
 
-            const docs: IWalletTransactionDocument[] = await WalletTransactionModel.find({ walletId: (walletDoc._id as Types.ObjectId).toString() })
+            let query = { walletId: (walletDoc._id as Types.ObjectId).toString() };
+            if (searchQuery) {
+                query = {
+                    ...query,
+                    $or: [
+                        { userName: { $regex: searchQuery, $options: 'i' } },
+                        { reason: { $regex: searchQuery, $options: 'i' } },
+                        { bookingId: { $regex: searchQuery, $options: 'i' } }
+                    ]
+                } as any;
+            }
+
+            const docs: IWalletTransactionDocument[] = await WalletTransactionModel.find(query)
                 .sort({ createdAt: -1 })
                 .exec()
 

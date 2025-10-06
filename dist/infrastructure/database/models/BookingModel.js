@@ -89,7 +89,7 @@ const BookingSchema = new mongoose_1.Schema({
     status: {
         type: String,
         enum: Object.values(Booking_1.BookingStatus),
-        default: Booking_1.BookingStatus.COMPLETED,
+        default: Booking_1.BookingStatus.PENDING,
         required: true,
         index: true
     },

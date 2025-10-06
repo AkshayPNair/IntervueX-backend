@@ -15,7 +15,7 @@ export class GetInterviewerBookingsUseCase implements IGetInterviewerBookingsSer
         private _userRepository:IUserRepository
     ){}
 
-    async execute(interviewerId:string):Promise<InterviewerBookingResponseDTO[]>{
+    async execute(interviewerId:string, search?:string):Promise<InterviewerBookingResponseDTO[]>{
         try {
             const interviewer=await this._userRepository.findApprovedInterviewerById(interviewerId)
             if(!interviewer){
@@ -41,9 +41,19 @@ export class GetInterviewerBookingsUseCase implements IGetInterviewerBookingsSer
                 }
             })
 
-            return bookings.map(booking=>
+            let filteredBookings = bookings.map(booking=>
                 toInterviewerBookingResponseDTO(booking,userMap.get(booking.userId))
             )
+
+            if (search && search.trim()) {
+                const searchLower = search.toLowerCase().trim();
+                filteredBookings = filteredBookings.filter(booking =>
+                    booking.userName.toLowerCase().includes(searchLower) ||
+                    booking.userEmail.toLowerCase().includes(searchLower)
+                );
+            }
+            
+            return filteredBookings
 
         } catch (error) {
              if (error instanceof AppError) {

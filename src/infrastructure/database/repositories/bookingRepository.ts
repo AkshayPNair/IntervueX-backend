@@ -203,6 +203,78 @@ export class BookingRepository extends BaseRepository<IBookingDocument> implemen
         }
     }
 
+    async getBookingsByFilterPaginated(filter: BookingFilterDTO, page?: number, pageSize?: number): Promise<{ bookings: Booking[], total: number }> {
+        try {
+            const query: any = {}
+
+            if (filter.userId) {
+                query.userId = new Types.ObjectId(filter.userId)
+            }
+
+            if (filter.interviewerId) {
+                query.interviewerId = new Types.ObjectId(filter.interviewerId)
+            }
+
+            if (filter.status) {
+                query.status = filter.status
+            }
+
+            if (filter.startDate || filter.endDate) {
+                query.date = {};
+                if (filter.startDate) {
+                    query.date.$gte = filter.startDate;
+                }
+                if (filter.endDate) {
+                    query.date.$lte = filter.endDate;
+                }
+            }
+
+            const skip = page && pageSize ? (page - 1) * pageSize : 0;
+            const limit = pageSize || 0;
+
+            const [bookingDocs, total] = await Promise.all([
+                limit > 0 ? this.model.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).exec() : this.model.find(query).sort({ createdAt: -1 }).exec(),
+                this.model.countDocuments(query).exec()
+            ]);
+
+            const bookings = bookingDocs.map(doc => new Booking(
+                (doc._id as Types.ObjectId).toString(),
+                doc.userId.toString(),
+                doc.interviewerId.toString(),
+                doc.date,
+                doc.startTime,
+                doc.endTime,
+                doc.amount,
+                doc.adminFee,
+                doc.interviewerAmount,
+                doc.status,
+                doc.paymentMethod,
+                doc.paymentId,
+                doc.cancellationReason,
+                doc.reminderEmail15Sent ?? false,
+                doc.reminderEmail5Sent ?? false,
+                doc.createdAt,
+                doc.updatedAt
+            ));
+
+            return { bookings, total };
+
+        } catch (error: any) {
+            if (error.name === 'CastError') {
+                throw new AppError(
+                    ErrorCode.VALIDATION_ERROR,
+                    'Invalid ID format in filter',
+                    HttpStatusCode.BAD_REQUEST
+                );
+            }
+            throw new AppError(
+                ErrorCode.DATABASE_ERROR,
+                'Failed to get bookings',
+                HttpStatusCode.INTERNAL_SERVER
+            );
+        }
+    }
+
     async updateBookingStatus(bookingId: string, status: BookingStatus): Promise<Booking | null> {
         try {
             const updatedDoc = await this.update(bookingId, {
@@ -397,7 +469,43 @@ export class BookingRepository extends BaseRepository<IBookingDocument> implemen
         }
     }
 
+    async getExpiredPendingBookings(olderThan: Date): Promise<Booking[]> {
+        try {
+            const bookingDocs = await this.findAll({
+                status: BookingStatus.PENDING,
+                paymentMethod: PaymentMethod.RAZORPAY
+            });
 
+            // Filter by createdAt in memory as a temporary fix
+            const expiredDocs = bookingDocs.filter(doc => doc.createdAt < olderThan);
+
+            return expiredDocs.map(doc => new Booking(
+                (doc._id as Types.ObjectId).toString(),
+                doc.userId.toString(),
+                doc.interviewerId.toString(),
+                doc.date,
+                doc.startTime,
+                doc.endTime,
+                doc.amount,
+                doc.adminFee,
+                doc.interviewerAmount,
+                doc.status,
+                doc.paymentMethod,
+                doc.paymentId,
+                doc.cancellationReason,
+                doc.reminderEmail15Sent ?? false,
+                doc.reminderEmail5Sent ?? false,
+                doc.createdAt,
+                doc.updatedAt
+            ));
+        } catch (error: any) {
+            throw new AppError(
+                ErrorCode.DATABASE_ERROR,
+                'Failed to get expired pending bookings',
+                HttpStatusCode.INTERNAL_SERVER
+            );
+        }
+    }
 
 
 }

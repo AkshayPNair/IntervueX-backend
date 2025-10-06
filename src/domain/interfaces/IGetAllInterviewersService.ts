@@ -1,5 +1,5 @@
 import { InterviewerProfileDTO } from "../dtos/user.dto";
 
 export interface IGetAllInterviewersService{
-    execute():Promise<InterviewerProfileDTO[]>
+    execute(searchQuery?: string):Promise<InterviewerProfileDTO[]>
 }

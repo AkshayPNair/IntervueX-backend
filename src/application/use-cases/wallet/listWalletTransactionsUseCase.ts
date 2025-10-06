@@ -9,9 +9,9 @@ import { IListWalletTransactionsService } from "../../../domain/interfaces/IList
 export class ListWalletTransactionsUseCase implements IListWalletTransactionsService{
     constructor(private _walletRepository: IWalletRepository) { }
 
-    async execute(userId: string, role: 'admin' | 'interviewer' | 'user'): Promise<WalletTransactionDTO[]> {
+    async execute(userId: string, role: 'admin' | 'interviewer' | 'user', searchQuery?: string): Promise<WalletTransactionDTO[]> {
         try {
-            const tnx = await this._walletRepository.listTransactions(userId, role)
+            const tnx = await this._walletRepository.listTransactions(userId, role, searchQuery)
             return tnx.map(toWalletTransactionDTO)
         } catch (error) {
             if (error instanceof AppError) {

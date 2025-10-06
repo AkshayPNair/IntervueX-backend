@@ -106,9 +106,35 @@ export class UserRepository extends BaseRepository<IUserDocument> implements IUs
     );
   }
 
-  async getAllUsers(): Promise<User[]> {
-    const results = await this.model.find({ role: { $in: ['user', 'interviewer'] } })
-    return results.map(mapDocToUser)
+  async getAllUsers(searchQuery?: string, role?: string, status?: string, page?: number, pageSize?: number): Promise<{ users: User[], total: number }> {
+    const query: any = { role: { $in: ['user', 'interviewer'] } };
+
+    if (searchQuery && searchQuery.trim()) {
+      const searchRegex = new RegExp(searchQuery.trim(), 'i');
+      query.$or = [
+        { name: { $regex: searchRegex } },
+        { email: { $regex: searchRegex } }
+      ];
+    }
+
+    if (role && role !== 'All') {
+      if (role === 'Candidate') {
+        query.role = 'user';
+      } else {
+        query.role = role.toLowerCase();
+      }
+    }
+
+    if (status && status !== 'All') {
+      query.isBlocked = status === 'Blocked';
+    }
+
+    const skip = page && pageSize ? (page - 1) * pageSize : 0;
+    const limit = pageSize || 0;
+
+    const total = await this.model.countDocuments(query);
+    const results = await this.model.find(query).skip(skip).limit(limit);
+    return { users: results.map(mapDocToUser), total };
   }
 
   async blockUserById(userId: string): Promise<void> {
@@ -123,13 +149,23 @@ export class UserRepository extends BaseRepository<IUserDocument> implements IUs
     await this.model.updateOne({ email }, { $set: { password: newPassword } })
   }
 
-  async findPendingInterviewers(): Promise<User[]> {
-    const results = await this.model.find({ 
-      role: 'interviewer', 
-      isVerified: true, 
+  async findPendingInterviewers(searchQuery?: string): Promise<User[]> {
+    const query: any = {
+      role: 'interviewer',
+      isVerified: true,
       isApproved: false,
-      isRejected:{$ne:true}
-    });
+      isRejected: { $ne: true }
+    };
+
+    if (searchQuery && searchQuery.trim()) {
+      const searchRegex = new RegExp(searchQuery.trim(), 'i');
+      query.$or = [
+        { name: { $regex: searchRegex } },
+        { email: { $regex: searchRegex } }
+      ];
+    }
+
+    const results = await this.model.find(query);
     return results.map(mapDocToUser);
   }
 
@@ -150,8 +186,8 @@ export class UserRepository extends BaseRepository<IUserDocument> implements IUs
     return result ? mapDocToUser(result) : null
   }
 
-  async findApprovedInterviewersWithProfiles(): Promise<UserWithInterviewerProfile[]> {
-    const results = await this.model.aggregate([
+  async findApprovedInterviewersWithProfiles(searchQuery?: string): Promise<UserWithInterviewerProfile[]> {
+    const pipeline: any[] = [
       {
         $match: {
           role: "interviewer",
@@ -189,8 +225,25 @@ export class UserRepository extends BaseRepository<IUserDocument> implements IUs
           "interviewerProfile.hourlyRate":1,
         }
       }
-    ]);
-    return results;
+    ];
+
+    if (searchQuery && searchQuery.trim()) {
+      const searchRegex = new RegExp(searchQuery.trim(), 'i');
+      pipeline.push({
+        $match: {
+          $or: [
+            { name: { $regex: searchRegex } },
+            { "interviewerProfile.jobTitle": { $regex: searchRegex } },
+            { "interviewerProfile.professionalBio": { $regex: searchRegex } },
+            { "interviewerProfile.technicalSkills": { $elemMatch: { $regex: searchRegex } } },
+            { skills: { $elemMatch: { $regex: searchRegex } } }
+          ]
+        }
+      });
+    }
+
+    const results = await this.model.aggregate(pipeline);
+    return results
   }
 
   async findApprovedInterviewerById(interviewerId: string): Promise<UserWithInterviewerProfile | null> {

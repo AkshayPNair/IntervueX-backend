@@ -10,7 +10,10 @@ export class AdminSessionController{
 
     async listSessions(req:AuthenticatedRequest,res:Response){
         try {
-            const result = await this._ListAdminSessionsService.execute();
+            const searchQuery = req.query.search as string | undefined;
+            const page = req.query.page ? parseInt(req.query.page as string) : undefined;
+            const pageSize = req.query.pageSize ? parseInt(req.query.pageSize as string) : undefined;
+            const result = await this._ListAdminSessionsService.execute(searchQuery, page, pageSize);
             res.status(HttpStatusCode.OK).json(result);
         } catch (error) {
             if (error instanceof AppError) {

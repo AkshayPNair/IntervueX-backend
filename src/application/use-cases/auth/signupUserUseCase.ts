@@ -28,6 +28,10 @@ export class SignupUserUseCase implements ISignupService{
       throw new AppError(ErrorCode.VALIDATION_ERROR, 'Name must be at least 2 characters long', HttpStatusCode.BAD_REQUEST);
     }
 
+    if (userDto.name.trim().length > 30) {
+      throw new AppError(ErrorCode.VALIDATION_ERROR, 'Name must be 30 characters or less', HttpStatusCode.BAD_REQUEST);
+     }
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!userDto.email || !emailRegex.test(userDto.email)) {
       throw new AppError(ErrorCode.VALIDATION_ERROR, 'Invalid email format', HttpStatusCode.BAD_REQUEST);
