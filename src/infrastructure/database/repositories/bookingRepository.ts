@@ -507,5 +507,102 @@ export class BookingRepository extends BaseRepository<IBookingDocument> implemen
         }
     }
 
+    async getInterviewerBookingsPaginated(interviewerId: string, page: number, limit: number, status: BookingStatus, search: string): Promise<{ bookings: Booking[]; total: number; userMap: Map<string, any>; }> {
+        try {
+            const skip = (page - 1) * limit;
+    
+            const pipeline: any[] = [
+                // Stage 1: Match only bookings for the correct interviewer and status
+                {
+                    $match: {
+                        interviewerId: new Types.ObjectId(interviewerId),
+                        status: status,
+                    }
+                },
+                // Stage 2: Join with the 'users' collection
+                {
+                    $lookup: {
+                        from: 'users', // The name of your users collection in MongoDB
+                        localField: 'userId',
+                        foreignField: '_id',
+                        as: 'userDetails'
+                    }
+                },
+                // Stage 3: Deconstruct the userDetails array to an object
+                { $unwind: '$userDetails' }
+            ];
+    
+            // Stage 4 (Conditional): If a search term exists, add a match stage for it
+            if (search) {
+                const regex = new RegExp(search, 'i');
+                pipeline.push({
+                    $match: {
+                        $or: [
+                            { 'userDetails.name': regex },
+                            { 'userDetails.email': regex }
+                        ]
+                    }
+                });
+            }
+    
+            // Create a separate pipeline to get the total count efficiently
+            const countPipeline = [...pipeline, { $count: 'total' }];
+    
+            // Create the main data pipeline with sorting and pagination
+            const dataPipeline = [
+                ...pipeline,
+                { $sort: { date: -1, startTime: -1 } }, // Sort by most recent
+                { $skip: skip },
+                { $limit: limit }
+            ];
+    
+            // Execute both pipelines concurrently for performance
+            const [totalResult, docs] = await Promise.all([
+                this.model.aggregate(countPipeline),
+                this.model.aggregate(dataPipeline)
+            ]);
+    
+            const total = totalResult.length > 0 ? totalResult[0].total : 0;
+            const userMap = new Map<string, any>();
+    
+            const bookings = docs.map(doc => {
+                const userIdString = doc.userId.toString();
+                // Populate the userMap while mapping bookings to avoid a separate loop
+                if (!userMap.has(userIdString)) {
+                    userMap.set(userIdString, doc.userDetails);
+                }
+                // Create a Booking entity from the aggregation result
+                return new Booking(
+                    doc._id.toString(),
+                    userIdString,
+                    doc.interviewerId.toString(),
+                    doc.date,
+                    doc.startTime,
+                    doc.endTime,
+                    doc.amount,
+                    doc.adminFee,
+                    doc.interviewerAmount,
+                    doc.status,
+                    doc.paymentMethod,
+                    doc.paymentId,
+                    doc.cancellationReason,
+                    doc.reminderEmail15Sent ?? false,
+                    doc.reminderEmail5Sent ?? false,
+                    doc.createdAt,
+                    doc.updatedAt
+                );
+            });
+    
+            return { bookings, total, userMap };
+    
+        } catch (error) {
+            console.error("Aggregation Error in getInterviewerBookingsPaginated:", error);
+            throw new AppError(
+                ErrorCode.DATABASE_ERROR,
+                'Failed to get paginated interviewer bookings',
+                HttpStatusCode.INTERNAL_SERVER
+            );
+        }
+    }
 
 }

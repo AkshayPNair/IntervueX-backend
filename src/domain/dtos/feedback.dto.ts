@@ -40,3 +40,12 @@ export interface InterviewerFeedbackResponseDTO{
   createdAt:Date;
 }
 
+export interface PaginatedFeedbackResponseDTO {
+   data: FeedbackResponseDTO[];
+   pagination: {
+     currentPage: number;
+     totalPages: number;
+     totalItems: number;
+     limit: number;
+   };
+ }

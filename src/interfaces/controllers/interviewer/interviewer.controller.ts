@@ -26,8 +26,9 @@ import { ChangePasswordDTO } from '../../../domain/dtos/user.dto';
 import { IDeleteAccountService } from '../../../domain/interfaces/IDeleteAccountService';
 import { INotificationPublisher } from '../../../domain/interfaces/INotificationPublisher';
 import { NotifyEvents } from '../../socket/notificationPublisher';
+import { BookingStatus } from '../../../domain/entities/Booking';
 
-export class InterviewerController{
+export class InterviewerController {
     constructor(
         private _submitVerificationService: ISubmitVerificationService,
         private _getVerificationStatusService: IGetVerificationStatusService,
@@ -41,16 +42,16 @@ export class InterviewerController{
         private _submitFeedbackService: ISubmitFeedbackService,
         private _listFeedbacksService: IListInterviewerFeedbacksService,
         private _getFeedbackByIdService: IGetInterviewerFeedbackByIdService,
-        private _getUserRatingByBookingIdService:IGetUserRatingByBookingIdService,
+        private _getUserRatingByBookingIdService: IGetUserRatingByBookingIdService,
         private _getInterviewerDashboardService: IGetInterviewerDashboardService,
         private _changePasswordService: IChangePasswordService,
         private _deleteAccountService: IDeleteAccountService,
-        private _notificationPublisher:INotificationPublisher
-    ){}
+        private _notificationPublisher: INotificationPublisher
+    ) { }
 
-    async submitVerification(req:AuthenticatedRequest,res:Response){
+    async submitVerification(req: AuthenticatedRequest, res: Response) {
         try {
-            if(!req.user){
+            if (!req.user) {
                 throw new AppError(
                     ErrorCode.UNAUTHORIZED,
                     'User not authenticated',
@@ -58,50 +59,50 @@ export class InterviewerController{
                 )
             }
 
-            const userId=req.user.id
-            const files=req.files as {[fieldname:string]: Express.MulterS3.File[]}
+            const userId = req.user.id
+            const files = req.files as { [fieldname: string]: Express.MulterS3.File[] }
 
-            const interviewerData={
-                profilePic: files?.profilePic?.[0]?.location||req.body.profilePic,
-                jobTitle:req.body.jobTitle,
-                yearsOfExperience:parseInt(req.body.yearsOfExperience),
+            const interviewerData = {
+                profilePic: files?.profilePic?.[0]?.location || req.body.profilePic,
+                jobTitle: req.body.jobTitle,
+                yearsOfExperience: parseInt(req.body.yearsOfExperience),
                 professionalBio: req.body.professionalBio,
-                technicalSkills: Array.isArray(req.body.technicalSkills) 
-                    ? req.body.technicalSkills 
+                technicalSkills: Array.isArray(req.body.technicalSkills)
+                    ? req.body.technicalSkills
                     : JSON.parse(req.body.technicalSkills || '[]'),
                 resume: files?.resume?.[0]?.location || req.body.resume,
             }
 
-            const result=await this._submitVerificationService.execute(userId, interviewerData)
+            const result = await this._submitVerificationService.execute(userId, interviewerData)
             res.status(HttpStatusCode.OK).json(result)
         } catch (error) {
-            if(error instanceof AppError){
+            if (error instanceof AppError) {
                 res.status(error.status).json({
-                    error:error.message,
-                    code:error.code,
-                    status:error.status
+                    error: error.message,
+                    code: error.code,
+                    status: error.status
                 })
-            }else{
+            } else {
                 res.status(HttpStatusCode.INTERNAL_SERVER).json({
-                    error:error instanceof Error ? error.message : "An unexpected error occurred",
+                    error: error instanceof Error ? error.message : "An unexpected error occurred",
                     code: ErrorCode.UNKNOWN_ERROR,
-                    status:HttpStatusCode.INTERNAL_SERVER
+                    status: HttpStatusCode.INTERNAL_SERVER
                 })
             }
         }
     }
 
-    async getVerificationStatus(req:AuthenticatedRequest,res:Response){
+    async getVerificationStatus(req: AuthenticatedRequest, res: Response) {
         try {
-            if(!req.user){
+            if (!req.user) {
                 throw new AppError(
                     ErrorCode.UNAUTHORIZED,
                     "User not authenticated",
                     HttpStatusCode.UNAUTHORIZED
                 )
             }
-            const userId=req.user.id
-            const result=await this._getVerificationStatusService.execute(userId)
+            const userId = req.user.id
+            const result = await this._getVerificationStatusService.execute(userId)
             res.status(HttpStatusCode.OK).json(result)
         } catch (error) {
             if (error instanceof AppError) {
@@ -120,17 +121,17 @@ export class InterviewerController{
         }
     }
 
-    async getProfile(req:AuthenticatedRequest,res:Response){
+    async getProfile(req: AuthenticatedRequest, res: Response) {
         try {
-            if(!req.user){
+            if (!req.user) {
                 throw new AppError(
                     ErrorCode.UNAUTHORIZED,
                     "User not authenticated",
                     HttpStatusCode.UNAUTHORIZED
                 )
             }
-            const userId=req.user.id
-            const result=await this._getInterviewerProfileService.execute(userId)
+            const userId = req.user.id
+            const result = await this._getInterviewerProfileService.execute(userId)
             res.status(HttpStatusCode.OK).json(result)
         } catch (error) {
             if (error instanceof AppError) {
@@ -149,9 +150,9 @@ export class InterviewerController{
         }
     }
 
-    async updateProfile(req:AuthenticatedRequest,res:Response){
+    async updateProfile(req: AuthenticatedRequest, res: Response) {
         try {
-            if(!req.user){
+            if (!req.user) {
                 throw new AppError(
                     ErrorCode.UNAUTHORIZED,
                     "User not authenticated",
@@ -159,17 +160,17 @@ export class InterviewerController{
                 );
             }
 
-            const userId=req.user.id
-            const files=req.files as {[fieldName:string]:Express.MulterS3.File[]}
+            const userId = req.user.id
+            const files = req.files as { [fieldName: string]: Express.MulterS3.File[] }
 
-            const rawUpdateData={
+            const rawUpdateData = {
                 name: req.body.name,
                 profilePic: files?.profilePic?.[0]?.location || req.body.profilePic,
                 jobTitle: req.body.jobTitle,
                 yearsOfExperience: req.body.yearsOfExperience ? parseInt(req.body.yearsOfExperience) : undefined,
                 professionalBio: req.body.professionalBio,
-                technicalSkills: Array.isArray(req.body.technicalSkills) 
-                    ? req.body.technicalSkills 
+                technicalSkills: Array.isArray(req.body.technicalSkills)
+                    ? req.body.technicalSkills
                     : (req.body.technicalSkills ? JSON.parse(req.body.technicalSkills) : undefined),
                 resume: files?.resume?.[0]?.location || req.body.resume,
                 hourlyRate: req.body.hourlyRate ? parseFloat(req.body.hourlyRate) : undefined,
@@ -196,50 +197,50 @@ export class InterviewerController{
         }
     }
 
-    async changePassword(req:AuthenticatedRequest,res:Response){
+    async changePassword(req: AuthenticatedRequest, res: Response) {
         try {
-            if(!req.user){
+            if (!req.user) {
                 throw new AppError(
                     ErrorCode.UNAUTHORIZED,
                     'User not authenticated',
                     HttpStatusCode.UNAUTHORIZED
                 )
             }
-            const userId=req.user.id
-            const body=req.body as Partial<ChangePasswordDTO>
-            if(!body.currentPassword || !body.newPassword){
+            const userId = req.user.id
+            const body = req.body as Partial<ChangePasswordDTO>
+            if (!body.currentPassword || !body.newPassword) {
                 throw new AppError(
                     ErrorCode.VALIDATION_ERROR,
                     'currentPassword and newPassword are required',
                     HttpStatusCode.BAD_REQUEST
                 )
             }
-            const dto:ChangePasswordDTO={
+            const dto: ChangePasswordDTO = {
                 currentPassword: body.currentPassword,
                 newPassword: body.newPassword
             }
-            await this._changePasswordService.execute(userId,dto)
-            res.status(HttpStatusCode.OK).json({message:'Password changed successfully'})
+            await this._changePasswordService.execute(userId, dto)
+            res.status(HttpStatusCode.OK).json({ message: 'Password changed successfully' })
         } catch (error) {
-            if(error instanceof AppError){
+            if (error instanceof AppError) {
                 res.status(error.status).json({
-                    error:error.message,
-                    code:error.code,
-                    status:error.status
+                    error: error.message,
+                    code: error.code,
+                    status: error.status
                 })
-            }else{
+            } else {
                 res.status(HttpStatusCode.INTERNAL_SERVER).json({
-                    error:error instanceof Error ? error.message : "An unexpected error occurred",
+                    error: error instanceof Error ? error.message : "An unexpected error occurred",
                     code: ErrorCode.UNKNOWN_ERROR,
-                    status:HttpStatusCode.INTERNAL_SERVER
+                    status: HttpStatusCode.INTERNAL_SERVER
                 })
             }
         }
     }
 
-    async saveSlotRule(req:AuthenticatedRequest,res:Response){
+    async saveSlotRule(req: AuthenticatedRequest, res: Response) {
         try {
-            if(!req.user){
+            if (!req.user) {
                 throw new AppError(
                     ErrorCode.UNAUTHORIZED,
                     "User not authenticated",
@@ -247,10 +248,10 @@ export class InterviewerController{
                 )
             }
 
-            const userId=req.user.id;
-            const slotRuleData:SaveSlotRuleDTO=req.body;
+            const userId = req.user.id;
+            const slotRuleData: SaveSlotRuleDTO = req.body;
 
-            const result=await this._saveSlotRuleService.execute(userId,slotRuleData);
+            const result = await this._saveSlotRuleService.execute(userId, slotRuleData);
             res.status(HttpStatusCode.OK).json(result)
         } catch (error) {
             if (error instanceof AppError) {
@@ -269,9 +270,9 @@ export class InterviewerController{
         }
     }
 
-    async getSlotRule(req:AuthenticatedRequest,res:Response){
+    async getSlotRule(req: AuthenticatedRequest, res: Response) {
         try {
-            if(!req.user){
+            if (!req.user) {
                 throw new AppError(
                     ErrorCode.UNAUTHORIZED,
                     "User not authenticated",
@@ -279,8 +280,8 @@ export class InterviewerController{
                 )
             }
 
-            const userId=req.user.id;
-            const result=await this._getSlotRuleService.execute(userId)
+            const userId = req.user.id;
+            const result = await this._getSlotRuleService.execute(userId)
             res.status(HttpStatusCode.OK).json(result)
         } catch (error) {
             if (error instanceof AppError) {
@@ -299,21 +300,24 @@ export class InterviewerController{
         }
     }
 
-    async getBookings(req:AuthenticatedRequest,res:Response){
+    async getBookings(req: AuthenticatedRequest, res: Response) {
         try {
-            if(!req.user){
-                 throw new AppError(
+            if (!req.user) {
+                throw new AppError(
                     ErrorCode.UNAUTHORIZED,
                     "User not authenticated",
                     HttpStatusCode.UNAUTHORIZED
                 );
             }
-            
-            const userId=req.user.id;
+
+            const userId = req.user.id;
             const search = req.query.search as string | undefined;
-            const result=await this._getInterviewerBookingsService.execute(userId, search)
+            const page = parseInt(req.query.page as string) || 1;
+            const limit = parseInt(req.query.limit as string) || 6; 
+            const status = (req.query.status as BookingStatus) || BookingStatus.CONFIRMED;
+            const result = await this._getInterviewerBookingsService.execute(userId,page,limit,status, search)
             res.status(HttpStatusCode.OK).json(result)
-            
+
         } catch (error) {
             if (error instanceof AppError) {
                 res.status(error.status).json({
@@ -331,81 +335,82 @@ export class InterviewerController{
         }
     }
 
-    async getSummary(req:AuthenticatedRequest,res:Response){
+    async getSummary(req: AuthenticatedRequest, res: Response) {
         try {
-            if(!req.user){
+            if (!req.user) {
                 throw new AppError(
                     ErrorCode.UNAUTHORIZED,
                     "User not authenticated",
                     HttpStatusCode.UNAUTHORIZED
                 )
             }
-            const userId=req.user.id
-            const role="interviewer"
-            const data=await this._getWalletSummaryService.execute(userId,role)
+            const userId = req.user.id
+            const role = "interviewer"
+            const data = await this._getWalletSummaryService.execute(userId, role)
             res.status(HttpStatusCode.OK).json(data)
         } catch (error) {
             if (error instanceof AppError) {
-                res.status(error.status).json({ 
-                    error: error.message, 
-                    code: error.code, 
-                    status: error.status });
-              } else {
-                res.status(HttpStatusCode.INTERNAL_SERVER).json({
-                  error: error instanceof Error ? error.message : "An unexpected error occurred",
-                  code: ErrorCode.UNKNOWN_ERROR,
-                  status: HttpStatusCode.INTERNAL_SERVER,
+                res.status(error.status).json({
+                    error: error.message,
+                    code: error.code,
+                    status: error.status
                 });
-              }
+            } else {
+                res.status(HttpStatusCode.INTERNAL_SERVER).json({
+                    error: error instanceof Error ? error.message : "An unexpected error occurred",
+                    code: ErrorCode.UNKNOWN_ERROR,
+                    status: HttpStatusCode.INTERNAL_SERVER,
+                });
+            }
         }
     }
 
-    async getTransactions(req:AuthenticatedRequest,res:Response){
+    async getTransactions(req: AuthenticatedRequest, res: Response) {
         try {
-            if(!req.user){
+            if (!req.user) {
                 throw new AppError(
                     ErrorCode.UNAUTHORIZED,
                     "User not authenticated",
                     HttpStatusCode.UNAUTHORIZED
                 )
             }
-            const userId=req.user.id
-            const role="interviewer"
-            const data=await this._listWalletTransactionsService.execute(userId,role)
+            const userId = req.user.id
+            const role = "interviewer"
+            const data = await this._listWalletTransactionsService.execute(userId, role)
             res.status(HttpStatusCode.OK).json(data)
         } catch (error) {
             if (error instanceof AppError) {
                 res.status(error.status).json({ error: error.message, code: error.code, status: error.status });
-              } else {
+            } else {
                 res.status(HttpStatusCode.INTERNAL_SERVER).json({
-                  error: error instanceof Error ? error.message : "An unexpected error occurred",
-                  code: ErrorCode.UNKNOWN_ERROR,
-                  status: HttpStatusCode.INTERNAL_SERVER,
+                    error: error instanceof Error ? error.message : "An unexpected error occurred",
+                    code: ErrorCode.UNKNOWN_ERROR,
+                    status: HttpStatusCode.INTERNAL_SERVER,
                 });
-              }
+            }
         }
     }
 
-    async submitFeedback(req:AuthenticatedRequest,res:Response){
+    async submitFeedback(req: AuthenticatedRequest, res: Response) {
         try {
-            if(!req.user){
+            if (!req.user) {
                 throw new AppError(
                     ErrorCode.UNAUTHORIZED,
                     'User not authenticated',
                     HttpStatusCode.UNAUTHORIZED
                 )
             }
-            const interviewerId=req.user.id
-            const payload: SubmitFeedbackDTO=req.body
-            if(!payload?.bookingId){
+            const interviewerId = req.user.id
+            const payload: SubmitFeedbackDTO = req.body
+            if (!payload?.bookingId) {
                 throw new AppError(
                     ErrorCode.VALIDATION_ERROR,
                     'bookingId is required',
                     HttpStatusCode.BAD_REQUEST
                 )
             }
-            const result=await this._submitFeedbackService.execute(interviewerId, interviewerId,payload)
-            
+            const result = await this._submitFeedbackService.execute(interviewerId, interviewerId, payload)
+
             const interviewerProfile = await this._getInterviewerProfileService.execute(interviewerId)
 
             this._notificationPublisher?.toUser(result.userId, NotifyEvents.FeedbackSubmitted, {
@@ -440,9 +445,9 @@ export class InterviewerController{
         }
     }
 
-    async listFeedbacks(req:AuthenticatedRequest,res:Response){
+    async listFeedbacks(req: AuthenticatedRequest, res: Response) {
         try {
-            if(!req.user){
+            if (!req.user) {
                 throw new AppError(
                     ErrorCode.UNAUTHORIZED,
                     'User not authenticated',
@@ -450,7 +455,11 @@ export class InterviewerController{
                 )
             }
             const interviewerId = req.user.id
-            const data = await this._listFeedbacksService.execute(interviewerId)
+            const page = parseInt(req.query.page as string) || 1;
+            const limit = parseInt(req.query.limit as string) || 6;
+            const searchTerm = (req.query.search as string) || '';
+            const sortBy = (req.query.sort as string) || 'date'; 
+            const data = await this._listFeedbacksService.execute(interviewerId, page, limit, searchTerm, sortBy);
             res.status(HttpStatusCode.OK).json(data)
         } catch (error) {
             if (error instanceof AppError) {
@@ -465,9 +474,9 @@ export class InterviewerController{
         }
     }
 
-    async getFeedbackById(req:AuthenticatedRequest,res:Response){
+    async getFeedbackById(req: AuthenticatedRequest, res: Response) {
         try {
-            if(!req.user){
+            if (!req.user) {
                 throw new AppError(
                     ErrorCode.UNAUTHORIZED,
                     'User not authenticated',
@@ -491,7 +500,7 @@ export class InterviewerController{
         }
     }
 
-     async getUserRatingByBookingId(req: AuthenticatedRequest, res: Response) {
+    async getUserRatingByBookingId(req: AuthenticatedRequest, res: Response) {
         try {
             if (!req.user) {
                 throw new AppError(

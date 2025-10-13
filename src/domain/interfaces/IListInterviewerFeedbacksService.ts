@@ -1,5 +1,5 @@
-import { FeedbackResponseDTO } from "../dtos/feedback.dto";
+import { FeedbackResponseDTO, PaginatedFeedbackResponseDTO } from "../dtos/feedback.dto";
 
 export interface IListInterviewerFeedbacksService {
-    execute(interviewerId: string): Promise<FeedbackResponseDTO[]>;
+    execute(interviewerId: string, page: number, limit: number,searchTerm: string, sortBy: string): Promise<PaginatedFeedbackResponseDTO>;
 }
