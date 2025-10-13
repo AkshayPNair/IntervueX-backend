@@ -282,5 +282,88 @@ export class FeedbackRepository extends BaseRepository<IFeedbackDocument> implem
         }
     }
 
+    async getPaginatedFeedbacksByInterviewer(
+        interviewerId: string,
+        page: number,
+        limit: number,
+        searchTerm: string,
+        sortBy: string
+    ): Promise<{ feedbacks: Feedback[], total: number }> {
+        try {
+            const skip = (page - 1) * limit;
+    
+            const pipeline: any[] = [
+                { $match: { interviewerId: new Types.ObjectId(interviewerId) } },             
+                {
+                    $lookup: {
+                        from: 'users', 
+                        localField: 'userId',
+                        foreignField: '_id',
+                        as: 'userDetails'
+                    }
+                },
+                { $unwind: '$userDetails' }
+            ];
+    
+            if (searchTerm) {
+                const regex = new RegExp(searchTerm, 'i');
+                pipeline.push({
+                    $match: {
+                        $or: [
+                            { 'userDetails.name': regex },
+                            { overallFeedback: regex },    
+                            { strengths: regex },
+                            { improvements: regex }
+                        ]
+                    }
+                });
+            }
+    
+            const countPipeline = [...pipeline, { $count: 'total' }];
+    
+            const dataPipeline = [
+                ...pipeline,
+                {
+                    $sort: sortBy === 'rating'
+                        ? { overallRating: -1 }
+                        : { createdAt: -1 }
+                },
+                { $skip: skip },
+                { $limit: limit }
+            ];
+    
+            const [totalResult, docs] = await Promise.all([
+                this.model.aggregate(countPipeline),
+                this.model.aggregate(dataPipeline)
+            ]);
+    
+            const total = totalResult.length > 0 ? totalResult[0].total : 0;
+    
+            const feedbacks = docs.map((doc) => new Feedback(
+                (doc._id as Types.ObjectId).toString(),
+                doc.bookingId.toString(),
+                doc.interviewerId.toString(),
+                doc.userId.toString(),
+                doc.overallRating,
+                doc.technicalRating,
+                doc.communicationRating,
+                doc.problemSolvingRating,
+                doc.overallFeedback,
+                doc.strengths,
+                doc.improvements,
+                doc.createdAt
+            ));
+    
+            return { feedbacks, total };
+    
+        } catch (error) {
+            console.error("Aggregation Error in getFeedbacksByInterviewer:", error);
+            throw new AppError(
+                ErrorCode.DATABASE_ERROR,
+                'Failed to fetch interviewer feedbacks',
+                HttpStatusCode.INTERNAL_SERVER
+            );
+        }
+    }
 
 }

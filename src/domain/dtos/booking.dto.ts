@@ -99,3 +99,13 @@ export interface VerifyPaymentDTO {
     razorpay_signature: string;
     bookingId: string;
 }
+
+export interface PaginatedInterviewerBookingsDTO {
+    data: InterviewerBookingResponseDTO[];
+    pagination: {
+      currentPage: number;
+      totalPages: number;
+      totalItems: number;
+      limit: number;
+    };
+  }
