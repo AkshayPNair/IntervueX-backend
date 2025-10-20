@@ -12,6 +12,7 @@ export interface IBookingDocument extends Document{
     interviewerAmount: number;
     status: BookingStatus;
     paymentMethod: PaymentMethod;
+    discussionTopic?: string;
     paymentId?: string;
     cancellationReason?:string;
     reminderEmail15Sent: boolean;
@@ -81,6 +82,11 @@ const BookingSchema=new Schema<IBookingDocument>({
         type: String,
         enum: Object.values(PaymentMethod),
         required: true
+    },
+    discussionTopic: {
+        type: String,
+        maxlength: 100,
+        trim: true
     },
     paymentId: {
         type: String

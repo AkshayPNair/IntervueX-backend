@@ -8,10 +8,11 @@ import { HttpStatusCode } from "../../../utils/HttpStatusCode";
 export class ListUserFeedbacksUseCase implements IListUserFeedbacksService {
     constructor(private _feedbackRepository: IFeedbackRepository) { }
 
-    async execute(userId: string){
+    async execute(userId: string, page: number, limit: number) {
         try {
-            const list = await this._feedbackRepository.getFeedbacksByUser(userId)
-            return list.map(feedback => ({
+            const { feedbacks, total } = await this._feedbackRepository.getPaginatedFeedbacksByUser(userId, page, limit)
+
+            const data = feedbacks.map(feedback => ({
                 id: feedback.id,
                 bookingId: feedback.bookingId,
                 interviewerId: feedback.interviewerId,
@@ -25,13 +26,23 @@ export class ListUserFeedbacksUseCase implements IListUserFeedbacksService {
                 improvements: feedback.improvements,
                 createdAt: feedback.createdAt,
             }))
+
+            return {
+                data,
+                pagination: {
+                    currentPage: page,
+                    totalPages: Math.ceil(total / limit) || 1,
+                    totalItems: total,
+                    limit
+                }
+            }
         } catch (error) {
             if (error instanceof AppError) {
                 throw error;
             }
             throw new AppError(
-                ErrorCode.INTERNAL_ERROR, 
-                'Failed to get feedbacks', 
+                ErrorCode.INTERNAL_ERROR,
+                'Failed to get feedbacks',
                 HttpStatusCode.INTERNAL_SERVER
             );
         }

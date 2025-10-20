@@ -26,14 +26,30 @@ export class ChatController {
                     HttpStatusCode.UNAUTHORIZED
                 )
             }
-            const userId = req.user.id
-            const interviewerId = req.body.interviewerId as string
-            if (!interviewerId) {
-                throw new AppError(
-                    ErrorCode.BAD_REQUEST,
-                    "interviewerId is required",
-                    HttpStatusCode.BAD_REQUEST
-                )
+            const requesterId = req.user.id
+            const role = req.user.role as "user" | "interviewer"
+            let userId: string
+            let interviewerId: string
+            if (role === "user") {
+                interviewerId = req.body.interviewerId
+                if (!interviewerId) {
+                    throw new AppError(
+                        ErrorCode.BAD_REQUEST,
+                        "interviewerId is required",
+                        HttpStatusCode.BAD_REQUEST
+                    )
+                }
+                userId = requesterId
+            } else {
+                userId = req.body.userId
+                if (!userId) {
+                    throw new AppError(
+                        ErrorCode.BAD_REQUEST,
+                        "userId is required",
+                        HttpStatusCode.BAD_REQUEST
+                    )
+                }
+                interviewerId = requesterId
             }
             const result = await this._startOrGetConversationService.execute(userId, interviewerId)
             res.status(HttpStatusCode.OK).json(result)

@@ -162,6 +162,15 @@ export class CreateBookingUseCase implements ICreateBookingService{
             errors.push('Start time must be before end time')
         }
 
+        const trimmedTopic = data.discussionTopic?.trim() ?? ''
+        if (!trimmedTopic) {
+            errors.push('Discussion topic is required')
+        } else if (trimmedTopic.length > 100) {
+            errors.push('Discussion topic must be 100 characters or fewer')
+        } else {
+            data.discussionTopic = trimmedTopic
+        }
+
         if (errors.length > 0) {
             throw new AppError(
                 ErrorCode.VALIDATION_ERROR,

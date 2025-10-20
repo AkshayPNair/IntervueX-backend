@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import { PipelineStage, Types } from "mongoose";
 import { BaseRepository } from "./baseRepository";
 import { FeedbackModel, IFeedbackDocument } from "../models/FeedbackModel";
 import { IFeedbackRepository } from "../../../domain/interfaces/IFeedbackRepository";
@@ -131,9 +131,9 @@ export class FeedbackRepository extends BaseRepository<IFeedbackDocument> implem
         }
     }
 
-    async getFeedbacksByUser(userId:string):Promise<Feedback[]>{
+    async getFeedbacksByUser(userId: string): Promise<Feedback[]> {
         try {
-            const docs=await this.findAll({userId:new Types.ObjectId(userId)})
+            const docs = await this.findAll({ userId: new Types.ObjectId(userId) })
             return docs.map((doc) => new Feedback(
                 (doc._id as Types.ObjectId).toString(),
                 doc.bookingId.toString(),
@@ -147,13 +147,61 @@ export class FeedbackRepository extends BaseRepository<IFeedbackDocument> implem
                 doc.strengths,
                 doc.improvements,
                 doc.createdAt,
-              ));
+            ));
         } catch (error) {
             throw new AppError(
                 ErrorCode.DATABASE_ERROR,
                 'Failed to fetch user feedbacks',
                 HttpStatusCode.INTERNAL_SERVER
-              );
+            );
+        }
+    }
+
+    async getPaginatedFeedbacksByUser(userId: string, page: number, limit: number): Promise<{ feedbacks: Feedback[], total: number }> {
+        try {
+            const skip = (page - 1) * limit;
+
+            const pipeline: PipelineStage[] = [
+                { $match: { userId: new Types.ObjectId(userId) } },
+                { $sort: { createdAt: -1 } },
+                { $skip: skip },
+                { $limit: limit },
+            ];
+
+            const countPipeline: PipelineStage[] = [
+                { $match: { userId: new Types.ObjectId(userId) } },
+                { $count: 'total' }
+            ];
+
+            const [docs, totalResult] = await Promise.all([
+                this.model.aggregate(pipeline),
+                this.model.aggregate(countPipeline)
+            ]);
+
+            const total = totalResult.length > 0 ? totalResult[0].total : 0;
+
+            const feedbacks = docs.map((doc: IFeedbackDocument) => new Feedback(
+                (doc._id as Types.ObjectId).toString(),
+                doc.bookingId.toString(),
+                doc.interviewerId.toString(),
+                doc.userId.toString(),
+                doc.overallRating,
+                doc.technicalRating,
+                doc.communicationRating,
+                doc.problemSolvingRating,
+                doc.overallFeedback,
+                doc.strengths,
+                doc.improvements,
+                doc.createdAt,
+            ));
+
+            return { feedbacks, total };
+        } catch (error) {
+            throw new AppError(
+                ErrorCode.DATABASE_ERROR,
+                'Failed to fetch user feedbacks',
+                HttpStatusCode.INTERNAL_SERVER
+            );
         }
     }
 

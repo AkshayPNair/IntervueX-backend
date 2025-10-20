@@ -23,6 +23,7 @@ export class Booking {
         public interviewerAmount: number,
         public status: BookingStatus,
         public paymentMethod: PaymentMethod,
+        public discussionTopic?: string,
         public paymentId?: string,
         public cancelReason?: string,
         public reminderEmail15Sent: boolean = false,

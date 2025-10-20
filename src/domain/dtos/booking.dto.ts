@@ -7,6 +7,7 @@ export interface CreateBookingDTO{
     endTime:string;
     amount:number;
     paymentMethod:PaymentMethod;
+    discussionTopic: string;
     paymentId?:string;
 }
 
@@ -26,6 +27,7 @@ export interface BookingResponseDTO{
     interviewerAmount:number;
     status:BookingStatus;
     paymentMethod:PaymentMethod;
+    discussionTopic?: string;
     paymentId?:string;
     cancelReason?:string;
     createdAt:Date;
@@ -44,6 +46,7 @@ export interface InterviewerBookingResponseDTO{
     interviewerAmount: number;
     status: BookingStatus;
     paymentMethod: PaymentMethod;
+    discussionTopic?: string;
     paymentId?: string;
     cancelReason?: string;
     createdAt: Date;
