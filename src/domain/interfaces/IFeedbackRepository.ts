@@ -10,6 +10,7 @@ export interface IFeedbackRepository extends IBaseRepository<Document> {
     getFeedbacksByInterviewer(interviewerId: string): Promise<Feedback[]>;
     getFeedbackById(id: string): Promise<Feedback | null>
     getFeedbacksByUser(userId: string): Promise<Feedback[]>;
+    getPaginatedFeedbacksByUser(userId: string, page: number, limit: number): Promise<{ feedbacks: Feedback[], total: number }>;
     createInterviewerRating(interviewerId: string, userId: string, data: SubmitInterviewerFeedbackDTO): Promise<InterviewerRating>
     findInterviewerRatingByBookingId(bookingId: string): Promise<InterviewerRating | null>
     getInterviewerRatingsByInterviewer(interviewerId: string): Promise<InterviewerRating[]>

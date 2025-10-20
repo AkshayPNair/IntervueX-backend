@@ -24,6 +24,7 @@ export const toBookingResponseDTO = (
         interviewerAmount: booking.interviewerAmount,
         status: booking.status,
         paymentMethod: booking.paymentMethod,
+        discussionTopic: booking.discussionTopic,
         paymentId: booking.paymentId,
         cancelReason: booking.cancelReason,
         createdAt: booking.createdAt,
@@ -47,6 +48,7 @@ export const toInterviewerBookingResponseDTO = (
         interviewerAmount: booking.interviewerAmount,
         status: booking.status,
         paymentMethod: booking.paymentMethod,
+        discussionTopic: booking.discussionTopic,
         paymentId: booking.paymentId,
         cancelReason: booking.cancelReason,
         createdAt: booking.createdAt,
@@ -65,6 +67,7 @@ export const toCreateBookingDTO = (data: CreateBookingDTO): CreateBookingDTO => 
         endTime: data.endTime,
         amount: data.amount,
         paymentMethod: data.paymentMethod,
+        discussionTopic: data.discussionTopic,
         paymentId: data.paymentId
     }
 }

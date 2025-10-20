@@ -655,7 +655,12 @@ export class UserController {
                 )
             }
             const userId = req.user.id
-            const data = await this._listFeedbacksService.execute(userId)
+            const pageParam = parseInt(req.query.page as string, 10)
+            const limitParam = parseInt(req.query.limit as string, 10)
+            const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1
+            const limit = Number.isFinite(limitParam) && limitParam > 0 ? limitParam : 6
+
+            const data = await this._listFeedbacksService.execute(userId, page, limit)
             res.status(HttpStatusCode.OK).json(data)
         } catch (error) {
             if (error instanceof AppError) {
